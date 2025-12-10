@@ -1,4 +1,5 @@
 spring:
+  # Database
   datasource:
     url: jdbc:mysql://172.18.144.1:3306/pm_db
     username: pm_user
@@ -16,3 +17,8 @@ spring:
 
 server:
   port: 8080
+
+# JWT Authentication
+jwt:
+  secret: MeinSuperGeheimesJwtSecretDasMindestens256BitLangSeinMuss123456
+  expiration: 86400000  # 24 hours in milliseconds
