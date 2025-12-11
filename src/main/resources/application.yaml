@@ -1,9 +1,9 @@
 spring:
-  # Database
+ # Database
   datasource:
-    url: jdbc:mysql://172.18.144.1:3306/pm_db
-    username: pm_user
-    password: iY7rd4xDhoN
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pm_db}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:changeme}
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:
@@ -20,5 +20,5 @@ server:
 
 # JWT Authentication
 jwt:
-  secret: MeinSuperGeheimesJwtSecretDasMindestens256BitLangSeinMuss123456
+  secret: ${JWT_SECRET:default-secret-change-me}
   expiration: 86400000  # 24 hours in milliseconds
