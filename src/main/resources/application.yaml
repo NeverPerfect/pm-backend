@@ -1,11 +1,11 @@
 spring:
- # Database
+  # Database
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pm_db}
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:changeme}
     driver-class-name: com.mysql.cj.jdbc.Driver
-  
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,4 +21,4 @@ server:
 # JWT Authentication
 jwt:
   secret: ${JWT_SECRET:default-secret-change-me}
-  expiration: 86400000  # 24 hours in milliseconds
+  expiration: 86400000 # 24 hours in milliseconds
