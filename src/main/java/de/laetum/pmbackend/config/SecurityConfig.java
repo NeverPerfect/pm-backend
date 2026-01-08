@@ -31,7 +31,19 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            auth -> auth.requestMatchers("/api/auth/**").permitAll().anyRequest().authenticated())
+            auth ->
+                auth.requestMatchers("/api/auth/**")
+                    .permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/users/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/users/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users/**")
+                    .hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/users/**")
+                    .hasRole("ADMIN")
+                    .anyRequest()
+                    .authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
