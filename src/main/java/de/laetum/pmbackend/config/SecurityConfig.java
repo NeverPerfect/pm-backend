@@ -34,6 +34,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/api/auth/**")
                     .permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
+                    .permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/users/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/users/**")
