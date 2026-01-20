@@ -44,6 +44,25 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/users/**")
                     .hasRole("ADMIN")
+                    // Teams - nur MANAGER und ADMIN
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/teams/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/teams/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/teams/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+
+                    // Projects - nur MANAGER und ADMIN
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/projects/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/projects/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/projects/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
