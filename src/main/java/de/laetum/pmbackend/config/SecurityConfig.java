@@ -53,6 +53,8 @@ public class SecurityConfig {
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/teams/**")
                     .hasAnyRole("MANAGER", "ADMIN")
+                    .requestMatchers("/api/schedules/**")
+                    .authenticated()
 
                     // Projects - nur MANAGER und ADMIN
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/**")
