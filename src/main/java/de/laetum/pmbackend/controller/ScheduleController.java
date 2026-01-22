@@ -77,4 +77,39 @@ public class ScheduleController {
             .orElseThrow(() -> new RuntimeException("User nicht gefunden"));
     return user.getId();
   }
+
+  // ==================== ADMIN/MANAGER ENDPOINTS ====================
+
+  /** Holt alle Schedules eines bestimmten Users (für Manager/Admin). */
+  @GetMapping("/user/{userId}")
+  public ResponseEntity<List<ScheduleDto>> getSchedulesByUserId(@PathVariable Long userId) {
+    List<ScheduleDto> schedules = scheduleService.getSchedulesByUserId(userId);
+    return ResponseEntity.ok(schedules);
+  }
+
+  /** Erstellt einen Schedule für einen bestimmten User (für Manager/Admin). */
+  @PostMapping("/user/{userId}")
+  public ResponseEntity<ScheduleDto> createScheduleForUser(
+      @PathVariable Long userId, @Valid @RequestBody CreateScheduleRequest request) {
+    ScheduleDto created = scheduleService.createSchedule(userId, request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
+  }
+
+  /** Aktualisiert einen Schedule eines bestimmten Users (für Manager/Admin). */
+  @PutMapping("/user/{userId}/{scheduleId}")
+  public ResponseEntity<ScheduleDto> updateScheduleForUser(
+      @PathVariable Long userId,
+      @PathVariable Long scheduleId,
+      @Valid @RequestBody UpdateScheduleRequest request) {
+    ScheduleDto updated = scheduleService.updateSchedule(scheduleId, userId, request);
+    return ResponseEntity.ok(updated);
+  }
+
+  /** Löscht einen Schedule eines bestimmten Users (für Manager/Admin). */
+  @DeleteMapping("/user/{userId}/{scheduleId}")
+  public ResponseEntity<Void> deleteScheduleForUser(
+      @PathVariable Long userId, @PathVariable Long scheduleId) {
+    scheduleService.deleteSchedule(scheduleId, userId);
+    return ResponseEntity.noContent().build();
+  }
 }

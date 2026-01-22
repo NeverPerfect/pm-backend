@@ -39,6 +39,11 @@ public class ScheduleService {
 
   /** Holt alle Schedules eines Users. */
   public List<ScheduleDto> getSchedulesByUserId(Long userId) {
+    // Prüfen ob User existiert
+    if (!userRepository.existsById(userId)) {
+      throw new ResourceNotFoundException("User nicht gefunden mit ID: " + userId);
+    }
+
     return scheduleRepository.findByUserIdOrderByDateDesc(userId).stream()
         .map(this::toDto)
         .collect(Collectors.toList());

@@ -53,6 +53,10 @@ public class SecurityConfig {
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/teams/**")
                     .hasAnyRole("MANAGER", "ADMIN")
+                    // Schedules Admin-Endpoints - nur MANAGER und ADMIN
+                    .requestMatchers("/api/schedules/user/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
+                    // Schedules eigene - alle authentifizierten User
                     .requestMatchers("/api/schedules/**")
                     .authenticated()
 
