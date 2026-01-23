@@ -9,6 +9,7 @@ import de.laetum.pmbackend.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/** Service für Authentifizierung und Login. Verarbeitet Login-Anfragen und generiert JWT-Tokens. */
 @Service
 public class AuthService {
 
@@ -23,6 +24,14 @@ public class AuthService {
     this.passwordEncoder = passwordEncoder;
   }
 
+  /**
+   * Authentifiziert einen Benutzer und gibt ein JWT-Token zurück.
+   *
+   * @param request Login-Daten (Username und Passwort)
+   * @return LoginResponse mit JWT-Token, User-ID, Username und Rolle
+   * @throws AuthenticationException wenn Username nicht existiert, Passwort falsch ist oder User
+   *     inaktiv ist
+   */
   public LoginResponse login(LoginRequest request) {
     User user =
         userRepository
