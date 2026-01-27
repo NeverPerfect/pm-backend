@@ -87,6 +87,16 @@ public class UserService {
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+    // Prüfen ob Ziel-User ein Admin ist
+    if (user.getRole() == Role.ADMIN) {
+      Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+      boolean isAdmin =
+          auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+      if (!isAdmin) {
+        throw new RuntimeException("Only admins can modify admin users");
+      }
+    }
+
     // Check if new username conflicts with another user
     userRepository
         .findByUsername(request.getUsername())

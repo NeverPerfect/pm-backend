@@ -14,6 +14,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Zentrale Sicherheitskonfiguration für die Backend-Anwendung. Definiert Authentifizierungs- und
+ * Autorisierungsregeln sowie JWT-Integration.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -27,12 +31,16 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.csrf(csrf -> csrf.disable())
+    http.csrf(csrf -> csrf.disable()) // Deaktiviert CSRF-Schutz für stateless JWT-Authentifizierung
         .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            session ->
+                session.sessionCreationPolicy(
+                    SessionCreationPolicy.STATELESS)) // Stateless-Sessions für JWT
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/**")
+                auth
+                    // Öffentliche Endpunkte (Authentifizierung und Swagger-Dokumentation)
+                    .requestMatchers("/api/auth/**")
                     .permitAll()
                     .requestMatchers(
                         "/swagger-ui/**",
@@ -43,51 +51,51 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
                     .permitAll()
+
+                    // Benutzerverwaltung - Rollenbasierte Zugriffe
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/users/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/users/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users/**")
-                    .hasRole("ADMIN")
+                    .hasRole("ADMIN") // Nur Admins dürfen Benutzer anlegen
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/users/**")
-                    .hasRole("ADMIN")
-                    // Teams - eigene Teams für alle authentifizierten User
+                    .hasRole("ADMIN") // Nur Admins dürfen Benutzer löschen
+
+                    // Team-Endpunkte
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/my")
-                    .authenticated()
-                    // Teams - nur MANAGER und ADMIN (bestehende Regeln)
+                    .authenticated() // Eigene Teams für alle authentifizierten Benutzer
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/**")
-                    .hasAnyRole("MANAGER", "ADMIN")
-                    // Teams - nur MANAGER und ADMIN
-                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/**")
-                    .hasAnyRole("MANAGER", "ADMIN")
+                    .hasAnyRole("MANAGER", "ADMIN") // Alle Team-Endpunkte für Manager/Admins
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/teams/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/teams/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/teams/**")
                     .hasAnyRole("MANAGER", "ADMIN")
-                    // Schedules Admin-Endpoints - nur MANAGER und ADMIN
+
+                    // Schedule-Endpunkte
                     .requestMatchers("/api/schedules/user/**")
-                    .hasAnyRole("MANAGER", "ADMIN")
-                    // Schedules eigene - alle authentifizierten User
+                    .hasAnyRole("MANAGER", "ADMIN") // Admin-Endpunkte für Schedules
                     .requestMatchers("/api/schedules/**")
-                    .authenticated()
+                    .authenticated() // Eigene Schedules für alle authentifizierten Benutzer
 
-                    // Projects EMPLOYEES
+                    // Projekt-Endpunkte
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/my")
-                    .authenticated()
-
-                    // Projects - nur MANAGER und ADMIN
+                    .authenticated() // Eigene Projekte für alle authentifizierten Benutzer
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/**")
-                    .hasAnyRole("MANAGER", "ADMIN")
+                    .hasAnyRole("MANAGER", "ADMIN") // Alle Projekt-Endpunkte für Manager/Admins
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/projects/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/projects/**")
                     .hasAnyRole("MANAGER", "ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/projects/**")
                     .hasAnyRole("MANAGER", "ADMIN")
+
+                    // Standardregel: Alle anderen Anfragen erfordern Authentifizierung
                     .anyRequest()
                     .authenticated())
+        // Fügt den JWT-Filter vor dem Standard-Authentifizierungsfilter ein
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

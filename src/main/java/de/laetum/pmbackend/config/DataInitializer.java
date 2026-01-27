@@ -7,6 +7,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * Initialisiert Standarddaten beim Anwendungsstart, z. B. einen Admin-Benutzer. Wird einmalig bei
+ * der ersten Ausführung der Anwendung verwendet.
+ */
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -20,6 +24,7 @@ public class DataInitializer implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
+    // Erstellt einen Standard-Admin-Benutzer, falls noch nicht vorhanden
     if (!userRepository.existsByUsername("admin")) {
       User admin = new User();
       admin.setUsername("admin");
@@ -30,7 +35,7 @@ public class DataInitializer implements CommandLineRunner {
       admin.setRole(Role.ADMIN);
 
       userRepository.save(admin);
-      System.out.println("Admin user created: admin / admin123");
+      System.out.println("Admin-Benutzer angelegt: Benutzername = admin, Passwort = admin123");
     }
   }
 }
