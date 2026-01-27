@@ -5,9 +5,11 @@ import de.laetum.pmbackend.dto.ProjectDto;
 import de.laetum.pmbackend.dto.UpdateProjectRequest;
 import de.laetum.pmbackend.entity.Project;
 import de.laetum.pmbackend.entity.Team;
+import de.laetum.pmbackend.entity.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.ProjectRepository;
 import de.laetum.pmbackend.repository.TeamRepository;
+import de.laetum.pmbackend.repository.UserRepository;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,10 +26,15 @@ public class ProjectService {
 
   private final ProjectRepository projectRepository;
   private final TeamRepository teamRepository;
+  private final UserRepository userRepository; // <-- NEU
 
-  public ProjectService(ProjectRepository projectRepository, TeamRepository teamRepository) {
+  public ProjectService(
+      ProjectRepository projectRepository,
+      TeamRepository teamRepository,
+      UserRepository userRepository) {
     this.projectRepository = projectRepository;
     this.teamRepository = teamRepository;
+    this.userRepository = userRepository; // <-- NEU
   }
 
   /**
@@ -147,6 +154,19 @@ public class ProjectService {
     project.removeTeam(team);
     Project savedProject = projectRepository.save(project);
     return toDto(savedProject);
+  }
+
+  public List<ProjectDto> getProjectsByUsername(String username) {
+    User user =
+        userRepository
+            .findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User nicht gefunden"));
+
+    return projectRepository.findByActiveTrue().stream()
+        .filter(
+            project -> project.getTeams().stream().anyMatch(team -> team.getUsers().contains(user)))
+        .map(this::toDto)
+        .collect(Collectors.toList());
   }
 
   /**

@@ -145,6 +145,18 @@ public class TeamService {
     return toDto(savedTeam);
   }
 
+  public List<TeamDto> getTeamsByUsername(String username) {
+    User user =
+        userRepository
+            .findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User nicht gefunden"));
+
+    return teamRepository.findAll().stream()
+        .filter(team -> team.getUsers().contains(user))
+        .map(this::toDto)
+        .collect(Collectors.toList());
+  }
+
   /**
    * Convert Team entity to TeamDto.
    *

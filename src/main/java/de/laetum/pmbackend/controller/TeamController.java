@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -117,5 +118,16 @@ public class TeamController {
       @Parameter(description = "ID des Teams") @PathVariable Long teamId,
       @Parameter(description = "ID des Benutzers") @PathVariable Long userId) {
     return ResponseEntity.ok(teamService.removeUserFromTeam(teamId, userId));
+  }
+
+  @Operation(
+      summary = "Eigene Teams abrufen",
+      description = "Gibt alle Teams zurück, in denen der eingeloggte User Mitglied ist")
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Teams erfolgreich abgerufen")})
+  @GetMapping("/my")
+  public ResponseEntity<List<TeamDto>> getMyTeams(Authentication authentication) {
+    String username = authentication.getName();
+    List<TeamDto> teams = teamService.getTeamsByUsername(username);
+    return ResponseEntity.ok(teams);
   }
 }

@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -122,5 +123,12 @@ public class ProjectController {
       @Parameter(description = "ID des Projekts") @PathVariable Long projectId,
       @Parameter(description = "ID des Teams") @PathVariable Long teamId) {
     return ResponseEntity.ok(projectService.removeTeamFromProject(projectId, teamId));
+  }
+
+  @GetMapping("/my")
+  public ResponseEntity<List<ProjectDto>> getMyProjects(Authentication authentication) {
+    String username = authentication.getName();
+    List<ProjectDto> projects = projectService.getProjectsByUsername(username);
+    return ResponseEntity.ok(projects);
   }
 }

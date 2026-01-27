@@ -51,6 +51,12 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/users/**")
                     .hasRole("ADMIN")
+                    // Teams - eigene Teams für alle authentifizierten User
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/my")
+                    .authenticated()
+                    // Teams - nur MANAGER und ADMIN (bestehende Regeln)
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/**")
+                    .hasAnyRole("MANAGER", "ADMIN")
                     // Teams - nur MANAGER und ADMIN
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/teams/**")
                     .hasAnyRole("MANAGER", "ADMIN")
@@ -65,6 +71,10 @@ public class SecurityConfig {
                     .hasAnyRole("MANAGER", "ADMIN")
                     // Schedules eigene - alle authentifizierten User
                     .requestMatchers("/api/schedules/**")
+                    .authenticated()
+
+                    // Projects EMPLOYEES
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/my")
                     .authenticated()
 
                     // Projects - nur MANAGER und ADMIN
