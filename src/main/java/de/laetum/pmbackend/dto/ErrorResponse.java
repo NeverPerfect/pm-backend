@@ -1,28 +1,17 @@
 package de.laetum.pmbackend.dto;
 
 import java.time.LocalDateTime;
+import lombok.Getter;
 
+@Getter
 public class ErrorResponse {
+    private final int status;
+    private final String message;
+    private final LocalDateTime timestamp;
 
-  private int status;
-  private String message;
-  private LocalDateTime timestamp;
-
-  public ErrorResponse(int status, String message) {
-    this.status = status;
-    this.message = message;
-    this.timestamp = LocalDateTime.now();
-  }
-
-  public int getStatus() {
-    return status;
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public LocalDateTime getTimestamp() {
-    return timestamp;
-  }
+    public ErrorResponse(int status, String message) {
+        this.status = status;
+        this.message = message;
+        this.timestamp = LocalDateTime.now();
+    }
 }
