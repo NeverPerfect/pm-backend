@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import de.laetum.pmbackend.entity.Role;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import de.laetum.pmbackend.service.user.UserMapper;
 
 /**
  * Service for user management operations. Handles CRUD operations and conversion between Entity and
@@ -23,10 +24,12 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final UserMapper userMapper;
 
-  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
+    this.userMapper = userMapper;
   }
 
   /**
@@ -35,7 +38,7 @@ public class UserService {
    * @return List of all users as DTOs (without passwords)
    */
   public List<UserDto> getAllUsers() {
-    return userRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    return userRepository.findAll().stream().map(userMapper::map).collect(Collectors.toList());
   }
 
   /**
@@ -50,7 +53,7 @@ public class UserService {
         userRepository
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-    return convertToDto(user);
+    return userMapper.map(user);
   }
 
   /**
@@ -74,7 +77,7 @@ public class UserService {
     user.setActive(request.isActive());
 
     User savedUser = userRepository.save(user);
-    return convertToDto(savedUser);
+    return userMapper.map(savedUser);
   }
 
   /**
@@ -122,7 +125,7 @@ public class UserService {
     }
 
     User savedUser = userRepository.save(user);
-    return convertToDto(savedUser);
+    return userMapper.map(savedUser);
   }
 
   /**
@@ -135,16 +138,5 @@ public class UserService {
       throw new ResourceNotFoundException("User not found with id: " + id);
     }
     userRepository.deleteById(id);
-  }
-
-  /** Convert User entity to UserDto. This ensures passwords are never exposed. */
-  private UserDto convertToDto(User user) {
-    return new UserDto(
-        user.getId(),
-        user.getUsername(),
-        user.getFirstName(),
-        user.getLastName(),
-        user.isActive(),
-        user.getRole());
   }
 }

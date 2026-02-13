@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import de.laetum.pmbackend.service.team.TeamMapper;
 
 /**
  * Service for team management operations. Handles CRUD operations for teams and user assignments.
@@ -23,19 +24,21 @@ public class TeamService {
 
   private final TeamRepository teamRepository;
   private final UserRepository userRepository;
+  private final TeamMapper teamMapper;
 
-  public TeamService(TeamRepository teamRepository, UserRepository userRepository) {
+  public TeamService(TeamRepository teamRepository, UserRepository userRepository, TeamMapper teamMapper) {
     this.teamRepository = teamRepository;
     this.userRepository = userRepository;
+    this.teamMapper = teamMapper;
   }
-
+  
   /**
    * Get all teams.
    *
    * @return List of all teams as DTOs
    */
   public List<TeamDto> getAllTeams() {
-    return teamRepository.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    return teamRepository.findAll().stream().map(teamMapper::map).collect(Collectors.toList());
   }
 
   /**
@@ -50,7 +53,7 @@ public class TeamService {
         teamRepository
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
-    return toDto(team);
+    return teamMapper.map(team);
   }
 
   /**
@@ -62,7 +65,7 @@ public class TeamService {
   public TeamDto createTeam(CreateTeamRequest request) {
     Team team = new Team(request.getName(), request.getDescription());
     Team savedTeam = teamRepository.save(team);
-    return toDto(savedTeam);
+    return teamMapper.map(savedTeam);
   }
 
   /**
@@ -83,7 +86,7 @@ public class TeamService {
     team.setDescription(request.getDescription());
 
     Team savedTeam = teamRepository.save(team);
-    return toDto(savedTeam);
+    return teamMapper.map(savedTeam);
   }
 
   /**
@@ -119,7 +122,7 @@ public class TeamService {
 
     team.addUser(user);
     Team savedTeam = teamRepository.save(team);
-    return toDto(savedTeam);
+    return teamMapper.map(savedTeam);
   }
 
   /**
@@ -142,7 +145,7 @@ public class TeamService {
 
     team.removeUser(user);
     Team savedTeam = teamRepository.save(team);
-    return toDto(savedTeam);
+    return teamMapper.map(savedTeam);
   }
 
   public List<TeamDto> getTeamsByUsername(String username) {
@@ -153,18 +156,7 @@ public class TeamService {
 
     return teamRepository.findAll().stream()
         .filter(team -> team.getUsers().contains(user))
-        .map(this::toDto)
+        .map(teamMapper::map)
         .collect(Collectors.toList());
-  }
-
-  /**
-   * Convert Team entity to TeamDto.
-   *
-   * @param team Team entity
-   * @return TeamDto with user IDs
-   */
-  private TeamDto toDto(Team team) {
-    Set<Long> userIds = team.getUsers().stream().map(User::getId).collect(Collectors.toSet());
-    return new TeamDto(team.getId(), team.getName(), team.getDescription(), userIds);
   }
 }

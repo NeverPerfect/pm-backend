@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import de.laetum.pmbackend.service.project.ProjectMapper;
 
 /**
  * Service for project management operations. Handles CRUD operations for projects and team
@@ -26,15 +27,18 @@ public class ProjectService {
 
   private final ProjectRepository projectRepository;
   private final TeamRepository teamRepository;
-  private final UserRepository userRepository; // <-- NEU
+  private final UserRepository userRepository;
+  private final ProjectMapper projectMapper;
 
   public ProjectService(
       ProjectRepository projectRepository,
       TeamRepository teamRepository,
-      UserRepository userRepository) {
+      UserRepository userRepository,
+      ProjectMapper projectMapper) {
     this.projectRepository = projectRepository;
     this.teamRepository = teamRepository;
-    this.userRepository = userRepository; // <-- NEU
+    this.userRepository = userRepository;
+    this.projectMapper = projectMapper;
   }
 
   /**
@@ -43,7 +47,7 @@ public class ProjectService {
    * @return List of all projects as DTOs
    */
   public List<ProjectDto> getAllProjects() {
-    return projectRepository.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    return projectRepository.findAll().stream().map(projectMapper::map).collect(Collectors.toList());
   }
 
   /**
@@ -58,7 +62,7 @@ public class ProjectService {
         projectRepository
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
-    return toDto(project);
+    return projectMapper.map(project);
   }
 
   /**
@@ -70,7 +74,7 @@ public class ProjectService {
   public ProjectDto createProject(CreateProjectRequest request) {
     Project project = new Project(request.getName(), request.getDescription(), true);
     Project savedProject = projectRepository.save(project);
-    return toDto(savedProject);
+    return projectMapper.map(savedProject);
   }
 
   /**
@@ -92,7 +96,7 @@ public class ProjectService {
     project.setActive(request.isActive());
 
     Project savedProject = projectRepository.save(project);
-    return toDto(savedProject);
+    return projectMapper.map(savedProject);
   }
 
   /**
@@ -129,7 +133,7 @@ public class ProjectService {
 
     project.addTeam(team);
     Project savedProject = projectRepository.save(project);
-    return toDto(savedProject);
+    return projectMapper.map(savedProject);
   }
 
   /**
@@ -153,7 +157,7 @@ public class ProjectService {
 
     project.removeTeam(team);
     Project savedProject = projectRepository.save(project);
-    return toDto(savedProject);
+    return projectMapper.map(savedProject);
   }
 
   public List<ProjectDto> getProjectsByUsername(String username) {
@@ -165,19 +169,8 @@ public class ProjectService {
     return projectRepository.findByActiveTrue().stream()
         .filter(
             project -> project.getTeams().stream().anyMatch(team -> team.getUsers().contains(user)))
-        .map(this::toDto)
+        .map(projectMapper::map)
         .collect(Collectors.toList());
   }
 
-  /**
-   * Convert Project entity to ProjectDto.
-   *
-   * @param project Project entity
-   * @return ProjectDto with team IDs
-   */
-  private ProjectDto toDto(Project project) {
-    Set<Long> teamIds = project.getTeams().stream().map(Team::getId).collect(Collectors.toSet());
-    return new ProjectDto(
-        project.getId(), project.getName(), project.getDescription(), project.isActive(), teamIds);
-  }
 }

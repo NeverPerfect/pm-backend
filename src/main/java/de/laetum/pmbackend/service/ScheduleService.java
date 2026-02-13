@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import de.laetum.pmbackend.service.schedule.ScheduleMapper;
 
 @Service
 @Transactional
@@ -25,17 +26,20 @@ public class ScheduleService {
   private final UserRepository userRepository;
   private final ProjectRepository projectRepository;
   private final TeamRepository teamRepository;
+  private final ScheduleMapper scheduleMapper;
 
   public ScheduleService(
-      ScheduleRepository scheduleRepository,
-      UserRepository userRepository,
-      ProjectRepository projectRepository,
-      TeamRepository teamRepository) {
-    this.scheduleRepository = scheduleRepository;
-    this.userRepository = userRepository;
-    this.projectRepository = projectRepository;
-    this.teamRepository = teamRepository;
-  }
+    ScheduleRepository scheduleRepository,
+    UserRepository userRepository,
+    ProjectRepository projectRepository,
+    TeamRepository teamRepository,
+    ScheduleMapper scheduleMapper) {
+  this.scheduleRepository = scheduleRepository;
+  this.userRepository = userRepository;
+  this.projectRepository = projectRepository;
+  this.teamRepository = teamRepository;
+  this.scheduleMapper = scheduleMapper;
+}
 
   /** Holt alle Schedules eines Users. */
   public List<ScheduleDto> getSchedulesByUserId(Long userId) {
@@ -45,7 +49,7 @@ public class ScheduleService {
     }
 
     return scheduleRepository.findByUserIdOrderByDateDesc(userId).stream()
-        .map(this::toDto)
+        .map(scheduleMapper::map)
         .collect(Collectors.toList());
   }
 
@@ -56,7 +60,7 @@ public class ScheduleService {
             .findById(id)
             .orElseThrow(
                 () -> new ResourceNotFoundException("Schedule nicht gefunden mit ID: " + id));
-    return toDto(schedule);
+    return scheduleMapper.map(schedule);
   }
 
   /**
@@ -103,7 +107,7 @@ public class ScheduleService {
     schedule.setTeam(team);
 
     Schedule saved = scheduleRepository.save(schedule);
-    return toDto(saved);
+    return scheduleMapper.map(saved);
   }
 
   /** Aktualisiert einen Schedule. Prüft, ob der Schedule dem User gehört. */
@@ -151,7 +155,7 @@ public class ScheduleService {
     schedule.setTeam(team);
 
     Schedule saved = scheduleRepository.save(schedule);
-    return toDto(saved);
+    return scheduleMapper.map(saved);
   }
 
   /** Löscht einen Schedule. Prüft, ob der Schedule dem User gehört. */
@@ -167,21 +171,5 @@ public class ScheduleService {
     }
 
     scheduleRepository.delete(schedule);
-  }
-
-  /** Konvertiert Entity zu DTO. */
-  private ScheduleDto toDto(Schedule schedule) {
-    ScheduleDto dto = new ScheduleDto();
-    dto.setId(schedule.getId());
-    dto.setDate(schedule.getDate());
-    dto.setHours(schedule.getHours());
-    dto.setDescription(schedule.getDescription());
-    dto.setUserId(schedule.getUser().getId());
-    dto.setUsername(schedule.getUser().getUsername());
-    dto.setProjectId(schedule.getProject().getId());
-    dto.setProjectName(schedule.getProject().getName());
-    dto.setTeamId(schedule.getTeam().getId());
-    dto.setTeamName(schedule.getTeam().getName());
-    return dto;
   }
 }
