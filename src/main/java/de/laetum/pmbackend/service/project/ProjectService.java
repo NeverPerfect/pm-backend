@@ -1,21 +1,20 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.project;
 
-import de.laetum.pmbackend.dto.CreateProjectRequest;
-import de.laetum.pmbackend.dto.ProjectDto;
-import de.laetum.pmbackend.dto.UpdateProjectRequest;
-import de.laetum.pmbackend.entity.Project;
-import de.laetum.pmbackend.repository.team.Team;   
-import de.laetum.pmbackend.repository.user.User;
+import de.laetum.pmbackend.controller.project.CreateProjectRequest; 
+import de.laetum.pmbackend.controller.project.ProjectDto; 
+import de.laetum.pmbackend.controller.project.UpdateProjectRequest; 
+import de.laetum.pmbackend.repository.project.Project;  
+import de.laetum.pmbackend.repository.team.Team;    
+import de.laetum.pmbackend.repository.user.User; 
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.ProjectRepository;
-import de.laetum.pmbackend.repository.team.TeamRepository; 
-import de.laetum.pmbackend.repository.user.UserRepository; 
+import de.laetum.pmbackend.repository.project.ProjectRepository; 
+import de.laetum.pmbackend.repository.team.TeamRepository;   
+import de.laetum.pmbackend.repository.user.UserRepository;  
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import de.laetum.pmbackend.service.project.ProjectMapper;
 
 /**
  * Service for project management operations. Handles CRUD operations for projects and team

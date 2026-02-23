@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import de.laetum.pmbackend.repository.user.User;  
 import de.laetum.pmbackend.repository.team.Team; 
+import de.laetum.pmbackend.repository.project.Project;
 
 @Entity
 @Table(name = "schedules")

@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.dto;
+package de.laetum.pmbackend.controller.project;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

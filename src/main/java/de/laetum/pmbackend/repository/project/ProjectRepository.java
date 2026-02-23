@@ -1,6 +1,6 @@
-package de.laetum.pmbackend.repository;
+package de.laetum.pmbackend.repository.project;
 
-import de.laetum.pmbackend.entity.Project;
+import de.laetum.pmbackend.repository.project.Project; 
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
