@@ -1,19 +1,18 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.team;
 
-import de.laetum.pmbackend.dto.CreateTeamRequest;
-import de.laetum.pmbackend.dto.TeamDto;
-import de.laetum.pmbackend.dto.UpdateTeamRequest;
-import de.laetum.pmbackend.entity.Team;
-import de.laetum.pmbackend.repository.user.User; 
+import de.laetum.pmbackend.controller.team.CreateTeamRequest;
+import de.laetum.pmbackend.controller.team.TeamDto;   
+import de.laetum.pmbackend.controller.team.UpdateTeamRequest; 
+import de.laetum.pmbackend.repository.team.Team;   
+import de.laetum.pmbackend.repository.user.User;   
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.TeamRepository;
-import de.laetum.pmbackend.repository.user.UserRepository; 
+import de.laetum.pmbackend.repository.team.TeamRepository;  
+import de.laetum.pmbackend.repository.user.UserRepository;  
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import de.laetum.pmbackend.service.team.TeamMapper;
 
 /**
  * Service for team management operations. Handles CRUD operations for teams and user assignments.

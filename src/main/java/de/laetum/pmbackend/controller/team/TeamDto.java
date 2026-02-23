@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.dto;
+package de.laetum.pmbackend.controller.team;
 
 import java.util.Set;
 import lombok.AllArgsConstructor;

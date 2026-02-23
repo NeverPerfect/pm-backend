@@ -1,9 +1,9 @@
-package de.laetum.pmbackend.controller;
+package de.laetum.pmbackend.controller.team; 
 
-import de.laetum.pmbackend.dto.CreateTeamRequest;
-import de.laetum.pmbackend.dto.TeamDto;
-import de.laetum.pmbackend.dto.UpdateTeamRequest;
-import de.laetum.pmbackend.service.TeamService;
+import de.laetum.pmbackend.controller.team.CreateTeamRequest;
+import de.laetum.pmbackend.controller.team.TeamDto; 
+import de.laetum.pmbackend.controller.team.UpdateTeamRequest; 
+import de.laetum.pmbackend.service.team.TeamService;      
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

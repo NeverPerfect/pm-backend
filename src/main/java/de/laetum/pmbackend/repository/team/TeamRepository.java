@@ -1,6 +1,6 @@
-package de.laetum.pmbackend.repository;
+package de.laetum.pmbackend.repository.team; 
 
-import de.laetum.pmbackend.entity.Team;
+import de.laetum.pmbackend.repository.team.Team; 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

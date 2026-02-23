@@ -1,9 +1,9 @@
-package de.laetum.pmbackend.entity;
+package de.laetum.pmbackend.repository.team;
 
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
-import de.laetum.pmbackend.repository.user.User;   
+import de.laetum.pmbackend.repository.user.User;
 
 @Entity
 @Table(name = "teams")

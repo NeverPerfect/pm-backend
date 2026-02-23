@@ -3,6 +3,7 @@ package de.laetum.pmbackend.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import de.laetum.pmbackend.repository.user.User;  
+import de.laetum.pmbackend.repository.team.Team; 
 
 @Entity
 @Table(name = "schedules")

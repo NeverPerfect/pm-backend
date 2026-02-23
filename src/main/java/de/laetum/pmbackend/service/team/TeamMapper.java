@@ -1,8 +1,8 @@
 package de.laetum.pmbackend.service.team;
 
-import de.laetum.pmbackend.dto.TeamDto;
-import de.laetum.pmbackend.entity.Team;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.controller.team.TeamDto; 
+import de.laetum.pmbackend.repository.team.Team;   
+import de.laetum.pmbackend.repository.user.User; 
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
