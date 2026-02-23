@@ -1,7 +1,7 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.auth;  
 
-import de.laetum.pmbackend.dto.LoginRequest;
-import de.laetum.pmbackend.dto.LoginResponse;
+import de.laetum.pmbackend.controller.auth.LoginRequest;
+import de.laetum.pmbackend.controller.auth.LoginResponse;
 import de.laetum.pmbackend.entity.User;
 import de.laetum.pmbackend.exception.AuthenticationException;
 import de.laetum.pmbackend.repository.UserRepository;

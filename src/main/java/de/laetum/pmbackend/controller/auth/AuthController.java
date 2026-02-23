@@ -1,8 +1,8 @@
-package de.laetum.pmbackend.controller;
+package de.laetum.pmbackend.controller.auth; 
 
-import de.laetum.pmbackend.dto.LoginRequest;
-import de.laetum.pmbackend.dto.LoginResponse;
-import de.laetum.pmbackend.service.AuthService;
+import de.laetum.pmbackend.controller.auth.LoginRequest;
+import de.laetum.pmbackend.controller.auth.LoginResponse;
+import de.laetum.pmbackend.service.auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
