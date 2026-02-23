@@ -1,8 +1,8 @@
 package de.laetum.pmbackend.config;
 
-import de.laetum.pmbackend.entity.Role;
-import de.laetum.pmbackend.entity.User;
-import de.laetum.pmbackend.repository.UserRepository;
+import de.laetum.pmbackend.repository.user.Role; 
+import de.laetum.pmbackend.repository.user.User; 
+import de.laetum.pmbackend.repository.user.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;

@@ -1,7 +1,7 @@
 package de.laetum.pmbackend.service.user;
 
-import de.laetum.pmbackend.dto.UserDto;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.controller.user.UserDto;
+import de.laetum.pmbackend.repository.user.User; 
 import org.springframework.stereotype.Component;
 
 /**

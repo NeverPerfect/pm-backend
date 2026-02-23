@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.entity;
+package de.laetum.pmbackend.repository.user;
 
 import jakarta.persistence.*;
 

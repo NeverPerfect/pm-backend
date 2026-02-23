@@ -2,9 +2,9 @@ package de.laetum.pmbackend.service.auth;
 
 import de.laetum.pmbackend.controller.auth.LoginRequest;
 import de.laetum.pmbackend.controller.auth.LoginResponse;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.AuthenticationException;
-import de.laetum.pmbackend.repository.UserRepository;
+import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

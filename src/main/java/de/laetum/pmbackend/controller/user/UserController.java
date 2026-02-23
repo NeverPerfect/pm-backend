@@ -1,9 +1,9 @@
-package de.laetum.pmbackend.controller;
+package de.laetum.pmbackend.controller.user;
 
-import de.laetum.pmbackend.dto.CreateUserRequest;
-import de.laetum.pmbackend.dto.UpdateUserRequest;
-import de.laetum.pmbackend.dto.UserDto;
-import de.laetum.pmbackend.service.UserService;
+import de.laetum.pmbackend.controller.user.CreateUserRequest; 
+import de.laetum.pmbackend.controller.user.UpdateUserRequest; 
+import de.laetum.pmbackend.controller.user.UserDto; 
+import de.laetum.pmbackend.service.user.UserService;  
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
