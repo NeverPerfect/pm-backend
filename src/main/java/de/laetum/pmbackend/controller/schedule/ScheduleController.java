@@ -1,11 +1,11 @@
-package de.laetum.pmbackend.controller;
+package de.laetum.pmbackend.controller.schedule;
 
-import de.laetum.pmbackend.dto.CreateScheduleRequest;
-import de.laetum.pmbackend.dto.ScheduleDto;
-import de.laetum.pmbackend.dto.UpdateScheduleRequest;
-import de.laetum.pmbackend.repository.user.User; 
-import de.laetum.pmbackend.repository.user.UserRepository;
-import de.laetum.pmbackend.service.ScheduleService;
+import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest; 
+import de.laetum.pmbackend.controller.schedule.ScheduleDto;    
+import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
+import de.laetum.pmbackend.repository.user.User;  
+import de.laetum.pmbackend.repository.user.UserRepository;   
+import de.laetum.pmbackend.service.schedule.ScheduleService;  
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

@@ -1,8 +1,8 @@
-package de.laetum.pmbackend.entity;
+package de.laetum.pmbackend.repository.schedule;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import de.laetum.pmbackend.repository.user.User;  
+import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.repository.team.Team; 
 import de.laetum.pmbackend.repository.project.Project;
 

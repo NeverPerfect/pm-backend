@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.dto;
+package de.laetum.pmbackend.controller.schedule; 
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateScheduleRequest {
+public class UpdateScheduleRequest {
     @NotNull(message = "Date is required")
     private LocalDate date;
 

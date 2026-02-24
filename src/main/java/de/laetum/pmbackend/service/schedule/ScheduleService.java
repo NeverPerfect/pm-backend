@@ -1,22 +1,21 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.schedule;
 
-import de.laetum.pmbackend.dto.CreateScheduleRequest;
-import de.laetum.pmbackend.dto.ScheduleDto;
-import de.laetum.pmbackend.dto.UpdateScheduleRequest;
+import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest; 
+import de.laetum.pmbackend.controller.schedule.ScheduleDto;  
+import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest; 
 import de.laetum.pmbackend.repository.project.Project;   
-import de.laetum.pmbackend.entity.Schedule;
+import de.laetum.pmbackend.repository.schedule.Schedule; 
 import de.laetum.pmbackend.repository.team.Team;   
 import de.laetum.pmbackend.repository.user.User; 
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.project.ProjectRepository;
-import de.laetum.pmbackend.repository.ScheduleRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository; 
 import de.laetum.pmbackend.repository.team.TeamRepository;  
 import de.laetum.pmbackend.repository.user.UserRepository; 
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import de.laetum.pmbackend.service.schedule.ScheduleMapper;
 
 @Service
 @Transactional

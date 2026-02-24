@@ -1,6 +1,6 @@
-package de.laetum.pmbackend.repository;
+package de.laetum.pmbackend.repository.schedule; 
 
-import de.laetum.pmbackend.entity.Schedule;
+import de.laetum.pmbackend.repository.schedule.Schedule; 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

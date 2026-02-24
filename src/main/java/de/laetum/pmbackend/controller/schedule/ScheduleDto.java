@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.dto;
+package de.laetum.pmbackend.controller.schedule;
 
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;

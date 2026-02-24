@@ -1,7 +1,7 @@
 package de.laetum.pmbackend.service.schedule;
 
-import de.laetum.pmbackend.dto.ScheduleDto;
-import de.laetum.pmbackend.entity.Schedule;
+import de.laetum.pmbackend.controller.schedule.ScheduleDto;
+import de.laetum.pmbackend.repository.schedule.Schedule; 
 import org.springframework.stereotype.Component;
 
 /**
