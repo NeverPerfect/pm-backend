@@ -1,10 +1,15 @@
 package de.laetum.pmbackend.repository.project;
 
+import de.laetum.pmbackend.repository.team.Team;
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.HashSet;
 import java.util.Set;
-import de.laetum.pmbackend.repository.team.Team;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "projects")
 public class Project {
@@ -22,13 +27,8 @@ public class Project {
   private boolean active = true;
 
   @ManyToMany
-  @JoinTable(
-      name = "project_teams",
-      joinColumns = @JoinColumn(name = "project_id"),
-      inverseJoinColumns = @JoinColumn(name = "team_id"))
+  @JoinTable(name = "project_teams", joinColumns = @JoinColumn(name = "project_id"), inverseJoinColumns = @JoinColumn(name = "team_id"))
   private Set<Team> teams = new HashSet<>();
-
-  public Project() {}
 
   public Project(String name, String description, boolean active) {
     this.name = name;
@@ -36,49 +36,6 @@ public class Project {
     this.active = active;
   }
 
-  // Getters
-  public Long getId() {
-    return id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public boolean isActive() {
-    return active;
-  }
-
-  public Set<Team> getTeams() {
-    return teams;
-  }
-
-  // Setters
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  public void setActive(boolean active) {
-    this.active = active;
-  }
-
-  public void setTeams(Set<Team> teams) {
-    this.teams = teams;
-  }
-
-  // Helper methods
   public void addTeam(Team team) {
     this.teams.add(team);
   }
