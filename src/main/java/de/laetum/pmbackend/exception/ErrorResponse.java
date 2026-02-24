@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.dto;
+package de.laetum.pmbackend.exception; 
 
 import java.time.LocalDateTime;
 import lombok.Getter;

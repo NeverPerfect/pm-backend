@@ -1,16 +1,17 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.user;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import de.laetum.pmbackend.dto.CreateUserRequest;
-import de.laetum.pmbackend.dto.UpdateUserRequest;
-import de.laetum.pmbackend.dto.UserDto;
-import de.laetum.pmbackend.entity.Role;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.controller.user.CreateUserRequest;
+import de.laetum.pmbackend.controller.user.UpdateUserRequest;
+import de.laetum.pmbackend.controller.user.UserDto;
+import de.laetum.pmbackend.repository.user.Role;
+import de.laetum.pmbackend.service.user.UserService;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.UserRepository;
+import de.laetum.pmbackend.repository.user.UserRepository;
+import de.laetum.pmbackend.repository.user.User;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,15 +23,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import de.laetum.pmbackend.service.user.UserMapper;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class UserServiceTest {
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @Mock private PasswordEncoder passwordEncoder;
+  @Mock
+  private PasswordEncoder passwordEncoder;
 
-  @InjectMocks private UserService userService;
+  @Mock
+  private UserMapper userMapper;
+
+  @InjectMocks
+  private UserService userService;
 
   private User testUser;
 
@@ -44,6 +55,10 @@ class UserServiceTest {
     testUser.setLastName("User");
     testUser.setRole(Role.EMPLOYEE);
     testUser.setActive(true);
+    when(userMapper.map(any(User.class))).thenAnswer(invocation -> {
+      User u = invocation.getArgument(0);
+      return new UserDto(u.getId(), u.getUsername(), u.getFirstName(), u.getLastName(), u.isActive(), u.getRole());
+    });
   }
 
   // ==================== getAllUsers ====================
@@ -108,8 +123,8 @@ class UserServiceTest {
     when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
     // Act & Assert
-    ResourceNotFoundException exception =
-        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(99L));
+    ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+        () -> userService.getUserById(99L));
     assertTrue(exception.getMessage().contains("99"));
   }
 
@@ -162,8 +177,7 @@ class UserServiceTest {
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
     // Act & Assert
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> userService.createUser(request));
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.createUser(request));
     assertTrue(exception.getMessage().contains("already exists"));
   }
 
@@ -246,8 +260,7 @@ class UserServiceTest {
     when(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(otherUser));
 
     // Act & Assert
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> userService.updateUser(1L, request));
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.updateUser(1L, request));
     assertTrue(exception.getMessage().contains("already exists"));
   }
 

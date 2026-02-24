@@ -1,14 +1,14 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.auth;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-import de.laetum.pmbackend.dto.LoginRequest;
-import de.laetum.pmbackend.dto.LoginResponse;
-import de.laetum.pmbackend.entity.Role;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.controller.auth.LoginRequest; 
+import de.laetum.pmbackend.controller.auth.LoginResponse; 
+import de.laetum.pmbackend.repository.user.Role;   
+import de.laetum.pmbackend.repository.user.User; 
 import de.laetum.pmbackend.exception.AuthenticationException;
-import de.laetum.pmbackend.repository.UserRepository;
+import de.laetum.pmbackend.repository.user.UserRepository; 
 import de.laetum.pmbackend.security.JwtService;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import de.laetum.pmbackend.service.auth.AuthService; 
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {

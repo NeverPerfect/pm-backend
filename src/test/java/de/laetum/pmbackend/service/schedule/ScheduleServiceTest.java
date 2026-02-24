@@ -1,22 +1,24 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.schedule;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import de.laetum.pmbackend.dto.CreateScheduleRequest;
-import de.laetum.pmbackend.dto.ScheduleDto;
-import de.laetum.pmbackend.dto.UpdateScheduleRequest;
-import de.laetum.pmbackend.entity.Project;
-import de.laetum.pmbackend.entity.Role;
-import de.laetum.pmbackend.entity.Schedule;
-import de.laetum.pmbackend.entity.Team;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest;
+import de.laetum.pmbackend.controller.schedule.ScheduleDto;
+import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
+import de.laetum.pmbackend.repository.project.Project;
+import de.laetum.pmbackend.repository.user.Role;
+import de.laetum.pmbackend.repository.schedule.Schedule;
+import de.laetum.pmbackend.repository.team.Team;
+import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.ProjectRepository;
-import de.laetum.pmbackend.repository.ScheduleRepository;
-import de.laetum.pmbackend.repository.TeamRepository;
-import de.laetum.pmbackend.repository.UserRepository;
+import de.laetum.pmbackend.repository.project.ProjectRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+import de.laetum.pmbackend.repository.team.TeamRepository;
+import de.laetum.pmbackend.repository.user.UserRepository;
+import de.laetum.pmbackend.service.schedule.ScheduleService;
+import de.laetum.pmbackend.service.schedule.ScheduleMapper;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -28,16 +30,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ScheduleServiceTest {
 
-  @Mock private ScheduleRepository scheduleRepository;
-  @Mock private UserRepository userRepository;
-  @Mock private ProjectRepository projectRepository;
-  @Mock private TeamRepository teamRepository;
+  @Mock
+  private ScheduleRepository scheduleRepository;
+  @Mock
+  private UserRepository userRepository;
+  @Mock
+  private ProjectRepository projectRepository;
+  @Mock
+  private TeamRepository teamRepository;
+  @Mock
+  private ScheduleMapper scheduleMapper;
 
-  @InjectMocks private ScheduleService scheduleService;
+  @InjectMocks
+  private ScheduleService scheduleService;
 
   private User testUser;
   private Team testTeam;
@@ -70,6 +82,22 @@ class ScheduleServiceTest {
     testSchedule.setUser(testUser);
     testSchedule.setTeam(testTeam);
     testSchedule.setProject(testProject);
+
+    when(scheduleMapper.map(any(Schedule.class))).thenAnswer(invocation -> {
+      Schedule s = invocation.getArgument(0);
+      ScheduleDto dto = new ScheduleDto();
+      dto.setId(s.getId());
+      dto.setDate(s.getDate());
+      dto.setHours(s.getHours());
+      dto.setDescription(s.getDescription());
+      dto.setUserId(s.getUser().getId());
+      dto.setUsername(s.getUser().getUsername());
+      dto.setProjectId(s.getProject().getId());
+      dto.setProjectName(s.getProject().getName());
+      dto.setTeamId(s.getTeam().getId());
+      dto.setTeamName(s.getTeam().getName());
+      return dto;
+    });
   }
 
   // ==================== getSchedulesByUserId ====================
@@ -180,9 +208,8 @@ class ScheduleServiceTest {
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
     // Act & Assert
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> scheduleService.createSchedule(2L, request));
+    IllegalArgumentException exception = assertThrows(
+        IllegalArgumentException.class, () -> scheduleService.createSchedule(2L, request));
     assertTrue(exception.getMessage().contains("nicht Mitglied"));
   }
 
@@ -206,9 +233,8 @@ class ScheduleServiceTest {
     when(projectRepository.findById(2L)).thenReturn(Optional.of(inactiveProject));
 
     // Act & Assert
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> scheduleService.createSchedule(1L, request));
+    IllegalArgumentException exception = assertThrows(
+        IllegalArgumentException.class, () -> scheduleService.createSchedule(1L, request));
     assertTrue(exception.getMessage().contains("nicht aktiv"));
   }
 
@@ -232,9 +258,8 @@ class ScheduleServiceTest {
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
     // Act & Assert
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> scheduleService.createSchedule(1L, request));
+    IllegalArgumentException exception = assertThrows(
+        IllegalArgumentException.class, () -> scheduleService.createSchedule(1L, request));
     assertTrue(exception.getMessage().contains("nicht zugewiesen"));
   }
 
@@ -278,9 +303,8 @@ class ScheduleServiceTest {
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 
     // Act & Assert - User 99 tries to update User 1's schedule
-    IllegalArgumentException exception =
-        assertThrows(
-            IllegalArgumentException.class, () -> scheduleService.updateSchedule(1L, 99L, request));
+    IllegalArgumentException exception = assertThrows(
+        IllegalArgumentException.class, () -> scheduleService.updateSchedule(1L, 99L, request));
     assertTrue(exception.getMessage().contains("Keine Berechtigung"));
   }
 
@@ -318,8 +342,8 @@ class ScheduleServiceTest {
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 
     // Act & Assert - User 99 tries to delete User 1's schedule
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> scheduleService.deleteSchedule(1L, 99L));
+    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        () -> scheduleService.deleteSchedule(1L, 99L));
     assertTrue(exception.getMessage().contains("Keine Berechtigung"));
     verify(scheduleRepository, never()).delete(any());
   }

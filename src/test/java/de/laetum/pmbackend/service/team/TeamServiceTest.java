@@ -1,18 +1,20 @@
-package de.laetum.pmbackend.service;
+package de.laetum.pmbackend.service.team;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import de.laetum.pmbackend.dto.CreateTeamRequest;
-import de.laetum.pmbackend.dto.TeamDto;
-import de.laetum.pmbackend.dto.UpdateTeamRequest;
-import de.laetum.pmbackend.entity.Role;
-import de.laetum.pmbackend.entity.Team;
-import de.laetum.pmbackend.entity.User;
+import de.laetum.pmbackend.controller.team.CreateTeamRequest;
+import de.laetum.pmbackend.controller.team.TeamDto;
+import de.laetum.pmbackend.controller.team.UpdateTeamRequest;
+import de.laetum.pmbackend.repository.user.Role;
+import de.laetum.pmbackend.repository.team.Team;
+import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.TeamRepository;
-import de.laetum.pmbackend.repository.UserRepository;
+import de.laetum.pmbackend.repository.team.TeamRepository;
+import de.laetum.pmbackend.repository.user.UserRepository;
+import de.laetum.pmbackend.service.team.TeamService;
+import de.laetum.pmbackend.service.team.TeamMapper;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -23,15 +25,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TeamServiceTest {
 
-  @Mock private TeamRepository teamRepository;
+  @Mock
+  private TeamRepository teamRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock
+  private UserRepository userRepository;
 
-  @InjectMocks private TeamService teamService;
+  @Mock
+  private TeamMapper teamMapper;
+
+  @InjectMocks
+  private TeamService teamService;
 
   private Team testTeam;
   private User testUser;
@@ -48,6 +61,11 @@ class TeamServiceTest {
     testUser.setLastName("User");
     testUser.setRole(Role.EMPLOYEE);
     testUser.setActive(true);
+    when(teamMapper.map(any(Team.class))).thenAnswer(invocation -> {
+      Team t = invocation.getArgument(0);
+      Set<Long> userIds = t.getUsers().stream().map(User::getId).collect(Collectors.toSet());
+      return new TeamDto(t.getId(), t.getName(), t.getDescription(), userIds);
+    });
   }
 
   // ==================== getAllTeams ====================
@@ -107,8 +125,8 @@ class TeamServiceTest {
     when(teamRepository.findById(99L)).thenReturn(Optional.empty());
 
     // Act & Assert
-    ResourceNotFoundException exception =
-        assertThrows(ResourceNotFoundException.class, () -> teamService.getTeamById(99L));
+    ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+        () -> teamService.getTeamById(99L));
     assertTrue(exception.getMessage().contains("99"));
   }
 
