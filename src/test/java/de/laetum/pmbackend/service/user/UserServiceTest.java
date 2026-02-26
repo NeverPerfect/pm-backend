@@ -12,9 +12,15 @@ import de.laetum.pmbackend.service.user.UserService;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.repository.user.User;
+import de.laetum.pmbackend.exception.AdminSelfModificationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +65,31 @@ class UserServiceTest {
       User u = invocation.getArgument(0);
       return new UserDto(u.getId(), u.getUsername(), u.getFirstName(), u.getLastName(), u.isActive(), u.getRole());
     });
+
+    // Default: authenticate as a non-admin user that won't interfere with tests
+    mockAuthenticatedUser("otheruser");
+    User otherUser = new User();
+    otherUser.setId(99L);
+    otherUser.setUsername("otheruser");
+    otherUser.setRole(Role.MANAGER);
+    when(userRepository.findByUsername("otheruser")).thenReturn(Optional.of(otherUser));
+  }
+
+  /**
+   * Sets up a mocked SecurityContext so that getAuthenticatedUser()
+   * resolves to the user with the given username.
+   */
+  private void mockAuthenticatedUser(String username) {
+    Authentication auth = mock(Authentication.class);
+    when(auth.getName()).thenReturn(username);
+    SecurityContext securityContext = mock(SecurityContext.class);
+    when(securityContext.getAuthentication()).thenReturn(auth);
+    SecurityContextHolder.setContext(securityContext);
+  }
+
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
   }
 
   // ==================== getAllUsers ====================
@@ -288,5 +319,93 @@ class UserServiceTest {
     // Act & Assert
     assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
     verify(userRepository, never()).deleteById(any());
+  }
+
+  // ==================== Admin Self-Protection ====================
+
+  @Test
+  @DisplayName("deleteUser throws exception when admin tries to delete themselves")
+  void deleteUser_WhenAdminDeletesSelf_ThrowsException() {
+    // Arrange
+    testUser.setRole(Role.ADMIN);
+    when(userRepository.existsById(1L)).thenReturn(true);
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+    mockAuthenticatedUser("testuser");
+
+    // Act & Assert
+    AdminSelfModificationException exception = assertThrows(
+        AdminSelfModificationException.class,
+        () -> userService.deleteUser(1L));
+    assertEquals(AdminSelfModificationException.SELF_DELETE, exception.getMessage());
+    verify(userRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteUser allows admin to delete a different user")
+  void deleteUser_WhenAdminDeletesOther_Succeeds() {
+    // Arrange
+    User adminUser = new User();
+    adminUser.setId(2L);
+    adminUser.setUsername("admin");
+    adminUser.setRole(Role.ADMIN);
+
+    when(userRepository.existsById(1L)).thenReturn(true);
+    when(userRepository.findByUsername("admin")).thenReturn(Optional.of(adminUser));
+    mockAuthenticatedUser("admin");
+
+    // Act
+    userService.deleteUser(1L);
+
+    // Assert
+    verify(userRepository).deleteById(1L);
+  }
+
+  @Test
+  @DisplayName("updateUser throws exception when admin demotes themselves")
+  void updateUser_WhenAdminDemotesSelf_ThrowsException() {
+    // Arrange
+    testUser.setRole(Role.ADMIN);
+    UpdateUserRequest request = new UpdateUserRequest();
+    request.setUsername("testuser");
+    request.setFirstName("Test");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+    mockAuthenticatedUser("testuser");
+
+    // Act & Assert
+    AdminSelfModificationException exception = assertThrows(
+        AdminSelfModificationException.class,
+        () -> userService.updateUser(1L, request));
+    assertEquals(AdminSelfModificationException.SELF_DEMOTE, exception.getMessage());
+    verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("updateUser allows admin to update themselves without role change")
+  void updateUser_WhenAdminUpdatesSelfKeepingRole_Succeeds() {
+    // Arrange
+    testUser.setRole(Role.ADMIN);
+    UpdateUserRequest request = new UpdateUserRequest();
+    request.setUsername("testuser");
+    request.setFirstName("Updated");
+    request.setLastName("Admin");
+    request.setRole(Role.ADMIN);
+    request.setActive(true);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+    when(userRepository.save(any(User.class))).thenReturn(testUser);
+    mockAuthenticatedUser("testuser");
+
+    // Act
+    UserDto result = userService.updateUser(1L, request);
+
+    // Assert
+    assertNotNull(result);
+    verify(userRepository).save(any(User.class));
   }
 }
