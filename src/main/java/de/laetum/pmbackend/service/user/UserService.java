@@ -11,7 +11,8 @@ import org.springframework.stereotype.Service;
 import de.laetum.pmbackend.controller.user.CreateUserRequest;
 import de.laetum.pmbackend.controller.user.UpdateUserRequest;
 import de.laetum.pmbackend.controller.user.UserDto;
-import de.laetum.pmbackend.exception.AdminSelfModificationException;
+import de.laetum.pmbackend.exception.LastAdminDeletionException;
+import de.laetum.pmbackend.exception.SelfModificationException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.repository.user.User;
@@ -113,8 +114,8 @@ public class UserService {
     if (currentUser.getId().equals(id)
         && user.getRole() == Role.ADMIN
         && request.getRole() != Role.ADMIN) {
-      throw new AdminSelfModificationException(
-          AdminSelfModificationException.SELF_DEMOTE);
+      throw new SelfModificationException(
+          SelfModificationException.ADMIN_SELF_DEMOTE);
     }
 
     // Only admins can modify other admin users
@@ -149,16 +150,26 @@ public class UserService {
    * Delete a user.
    *
    * @param id User ID
+   * @throws ResourceNotFoundException  if user does not exist
+   * @throws SelfModificationException  if user attempts to delete themselves
+   * @throws LastAdminDeletionException if this would delete the last active admin
    */
   public void deleteUser(Long id) {
-    if (!userRepository.existsById(id)) {
-      throw new ResourceNotFoundException("User not found with id: " + id);
-    }
+    User userToDelete = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+    // Prevent self-deletion
     User currentUser = getAuthenticatedUser();
     if (currentUser.getId().equals(id)) {
-      throw new AdminSelfModificationException(
-          AdminSelfModificationException.SELF_DELETE);
+      throw new SelfModificationException(SelfModificationException.SELF_DELETE);
+    }
+
+    // Prevent deletion of the last active admin
+    if (userToDelete.getRole() == Role.ADMIN && userToDelete.isActive()) {
+      long activeAdminCount = userRepository.countByRoleAndActiveTrue(Role.ADMIN);
+      if (activeAdminCount <= 1) {
+        throw new LastAdminDeletionException();
+      }
     }
 
     userRepository.deleteById(id);

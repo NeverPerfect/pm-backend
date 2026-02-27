@@ -41,12 +41,23 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Handles attempts by admins to delete or demote their own account.
+   * Handles attempts by users to perform forbidden self-modifications
+   * (e.g., self-deletion or admin self-demotion).
    */
-  @ExceptionHandler(AdminSelfModificationException.class)
-  public ResponseEntity<ErrorResponse> handleAdminSelfModificationException(
-      AdminSelfModificationException ex) {
+  @ExceptionHandler(SelfModificationException.class)
+  public ResponseEntity<ErrorResponse> handleSelfModificationException(
+      SelfModificationException ex) {
     ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
     return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+  }
+
+  /**
+   * Handles attempts to delete the last remaining active admin account.
+   */
+  @ExceptionHandler(LastAdminDeletionException.class)
+  public ResponseEntity<ErrorResponse> handleLastAdminDeletionException(
+      LastAdminDeletionException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
   }
 }

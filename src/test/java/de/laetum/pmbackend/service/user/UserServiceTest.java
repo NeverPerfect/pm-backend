@@ -12,7 +12,8 @@ import de.laetum.pmbackend.service.user.UserService;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.repository.user.User;
-import de.laetum.pmbackend.exception.AdminSelfModificationException;
+import de.laetum.pmbackend.exception.LastAdminDeletionException;
+import de.laetum.pmbackend.exception.SelfModificationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -301,7 +302,7 @@ class UserServiceTest {
   @DisplayName("deleteUser deletes user successfully")
   void deleteUser_WhenUserExists_DeletesUser() {
     // Arrange
-    when(userRepository.existsById(1L)).thenReturn(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
     // Act
     userService.deleteUser(1L);
@@ -314,7 +315,7 @@ class UserServiceTest {
   @DisplayName("deleteUser throws exception when user not found")
   void deleteUser_WhenUserNotFound_ThrowsException() {
     // Arrange
-    when(userRepository.existsById(99L)).thenReturn(false);
+    when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
@@ -324,19 +325,18 @@ class UserServiceTest {
   // ==================== Admin Self-Protection ====================
 
   @Test
-  @DisplayName("deleteUser throws exception when admin tries to delete themselves")
-  void deleteUser_WhenAdminDeletesSelf_ThrowsException() {
+  @DisplayName("deleteUser throws exception when user tries to delete themselves")
+  void deleteUser_WhenUserDeletesSelf_ThrowsException() {
     // Arrange
-    testUser.setRole(Role.ADMIN);
-    when(userRepository.existsById(1L)).thenReturn(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
     mockAuthenticatedUser("testuser");
 
     // Act & Assert
-    AdminSelfModificationException exception = assertThrows(
-        AdminSelfModificationException.class,
+    SelfModificationException exception = assertThrows(
+        SelfModificationException.class,
         () -> userService.deleteUser(1L));
-    assertEquals(AdminSelfModificationException.SELF_DELETE, exception.getMessage());
+    assertEquals(SelfModificationException.SELF_DELETE, exception.getMessage());
     verify(userRepository, never()).deleteById(any());
   }
 
@@ -349,7 +349,7 @@ class UserServiceTest {
     adminUser.setUsername("admin");
     adminUser.setRole(Role.ADMIN);
 
-    when(userRepository.existsById(1L)).thenReturn(true);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(userRepository.findByUsername("admin")).thenReturn(Optional.of(adminUser));
     mockAuthenticatedUser("admin");
 
@@ -377,10 +377,10 @@ class UserServiceTest {
     mockAuthenticatedUser("testuser");
 
     // Act & Assert
-    AdminSelfModificationException exception = assertThrows(
-        AdminSelfModificationException.class,
+    SelfModificationException exception = assertThrows(
+        SelfModificationException.class,
         () -> userService.updateUser(1L, request));
-    assertEquals(AdminSelfModificationException.SELF_DEMOTE, exception.getMessage());
+    assertEquals(SelfModificationException.ADMIN_SELF_DEMOTE, exception.getMessage());
     verify(userRepository, never()).save(any());
   }
 
@@ -407,5 +407,89 @@ class UserServiceTest {
     // Assert
     assertNotNull(result);
     verify(userRepository).save(any(User.class));
+  }
+  // ==================== Last Admin Protection ====================
+
+  @Test
+  @DisplayName("deleteUser throws exception when deleting last active admin")
+  void deleteUser_WhenDeletingLastActiveAdmin_ThrowsException() {
+    // Arrange
+    User lastAdmin = new User();
+    lastAdmin.setId(3L);
+    lastAdmin.setUsername("lastadmin");
+    lastAdmin.setRole(Role.ADMIN);
+    lastAdmin.setActive(true);
+
+    User currentAdmin = new User();
+    currentAdmin.setId(4L);
+    currentAdmin.setUsername("currentadmin");
+    currentAdmin.setRole(Role.ADMIN);
+
+    when(userRepository.findById(3L)).thenReturn(Optional.of(lastAdmin));
+    when(userRepository.findByUsername("currentadmin")).thenReturn(Optional.of(currentAdmin));
+    when(userRepository.countByRoleAndActiveTrue(Role.ADMIN)).thenReturn(1L);
+    mockAuthenticatedUser("currentadmin");
+
+    // Act & Assert
+    LastAdminDeletionException exception = assertThrows(
+        LastAdminDeletionException.class,
+        () -> userService.deleteUser(3L));
+    assertEquals(LastAdminDeletionException.MESSAGE, exception.getMessage());
+    verify(userRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteUser allows deletion of admin when other active admins exist")
+  void deleteUser_WhenOtherActiveAdminsExist_Succeeds() {
+    // Arrange
+    User adminToDelete = new User();
+    adminToDelete.setId(3L);
+    adminToDelete.setUsername("admintodelete");
+    adminToDelete.setRole(Role.ADMIN);
+    adminToDelete.setActive(true);
+
+    User currentAdmin = new User();
+    currentAdmin.setId(4L);
+    currentAdmin.setUsername("currentadmin");
+    currentAdmin.setRole(Role.ADMIN);
+
+    when(userRepository.findById(3L)).thenReturn(Optional.of(adminToDelete));
+    when(userRepository.findByUsername("currentadmin")).thenReturn(Optional.of(currentAdmin));
+    when(userRepository.countByRoleAndActiveTrue(Role.ADMIN)).thenReturn(2L);
+    mockAuthenticatedUser("currentadmin");
+
+    // Act
+    userService.deleteUser(3L);
+
+    // Assert
+    verify(userRepository).deleteById(3L);
+  }
+
+  @Test
+  @DisplayName("deleteUser allows deletion of inactive admin even if last")
+  void deleteUser_WhenDeletingInactiveAdmin_Succeeds() {
+    // Arrange
+    User inactiveAdmin = new User();
+    inactiveAdmin.setId(3L);
+    inactiveAdmin.setUsername("inactiveadmin");
+    inactiveAdmin.setRole(Role.ADMIN);
+    inactiveAdmin.setActive(false);
+
+    User currentAdmin = new User();
+    currentAdmin.setId(4L);
+    currentAdmin.setUsername("currentadmin");
+    currentAdmin.setRole(Role.ADMIN);
+
+    when(userRepository.findById(3L)).thenReturn(Optional.of(inactiveAdmin));
+    when(userRepository.findByUsername("currentadmin")).thenReturn(Optional.of(currentAdmin));
+    mockAuthenticatedUser("currentadmin");
+
+    // Act
+    userService.deleteUser(3L);
+
+    // Assert
+    verify(userRepository).deleteById(3L);
+    // Note: countByRoleAndActiveTrue is NOT called because the admin is inactive
+    verify(userRepository, never()).countByRoleAndActiveTrue(any());
   }
 }
