@@ -118,6 +118,14 @@ public class UserService {
           SelfModificationException.ADMIN_SELF_DEMOTE);
     }
 
+    // Prevent admins from deactivating their own account
+    if (currentUser.getId().equals(id)
+        && user.getRole() == Role.ADMIN
+        && !request.getActive()) {
+      throw new SelfModificationException(
+          SelfModificationException.ADMIN_SELF_DEACTIVATE);
+    }
+
     // Only admins can modify other admin users
     if (user.getRole() == Role.ADMIN && currentUser.getRole() != Role.ADMIN) {
       throw new RuntimeException("Only admins can modify admin users");

@@ -408,6 +408,30 @@ class UserServiceTest {
     assertNotNull(result);
     verify(userRepository).save(any(User.class));
   }
+
+  @Test
+  @DisplayName("updateUser throws exception when admin deactivates themselves")
+  void updateUser_WhenAdminDeactivatesSelf_ThrowsException() {
+    // Arrange
+    testUser.setRole(Role.ADMIN);
+    UpdateUserRequest request = new UpdateUserRequest();
+    request.setUsername("testuser");
+    request.setFirstName("Test");
+    request.setLastName("User");
+    request.setRole(Role.ADMIN);
+    request.setActive(false); // <-- deactivating self
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+    mockAuthenticatedUser("testuser");
+
+    // Act & Assert
+    SelfModificationException exception = assertThrows(
+        SelfModificationException.class,
+        () -> userService.updateUser(1L, request));
+    assertEquals(SelfModificationException.ADMIN_SELF_DEACTIVATE, exception.getMessage());
+    verify(userRepository, never()).save(any());
+  }
   // ==================== Last Admin Protection ====================
 
   @Test
