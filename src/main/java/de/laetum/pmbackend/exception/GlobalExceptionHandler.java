@@ -60,4 +60,15 @@ public class GlobalExceptionHandler {
     ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
   }
+
+  /**
+   * Handles attempts to delete a user that is still referenced
+   * by other entities (teams, schedules).
+   */
+  @ExceptionHandler(UserInUseException.class)
+  public ResponseEntity<ErrorResponse> handleUserInUseException(
+      UserInUseException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
 }

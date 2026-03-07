@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import de.laetum.pmbackend.controller.user.CreateUserRequest;
 import de.laetum.pmbackend.controller.user.UpdateUserRequest;
 import de.laetum.pmbackend.controller.user.UserDto;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.service.user.UserService;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
@@ -33,6 +35,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import de.laetum.pmbackend.service.user.UserMapper;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import de.laetum.pmbackend.exception.UserInUseException;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -46,6 +49,12 @@ class UserServiceTest {
 
   @Mock
   private UserMapper userMapper;
+
+  @Mock
+  private TeamRepository teamRepository;
+
+  @Mock
+  private ScheduleRepository scheduleRepository;
 
   @InjectMocks
   private UserService userService;
@@ -516,4 +525,53 @@ class UserServiceTest {
     // Note: countByRoleAndActiveTrue is NOT called because the admin is inactive
     verify(userRepository, never()).countByRoleAndActiveTrue(any());
   }
+
+  // ==================== User In Use Protection ====================
+  @Test
+  @DisplayName("deleteUser throws exception when user is assigned to teams")
+  void deleteUser_WhenUserInTeams_ThrowsException() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.existsByUsersId(1L)).thenReturn(true);
+
+    // Act & Assert
+    UserInUseException exception = assertThrows(
+        UserInUseException.class,
+        () -> userService.deleteUser(1L));
+    assertEquals(UserInUseException.IN_TEAMS, exception.getMessage());
+    verify(userRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteUser throws exception when user has schedule entries")
+  void deleteUser_WhenUserHasSchedules_ThrowsException() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.existsByUsersId(1L)).thenReturn(false);
+    when(scheduleRepository.existsByUserId(1L)).thenReturn(true);
+
+    // Act & Assert
+    UserInUseException exception = assertThrows(
+        UserInUseException.class,
+        () -> userService.deleteUser(1L));
+    assertEquals(UserInUseException.HAS_SCHEDULES, exception.getMessage());
+    verify(userRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteUser checks teams before schedules")
+  void deleteUser_WhenUserInTeamsAndHasSchedules_ThrowsTeamException() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.existsByUsersId(1L)).thenReturn(true);
+
+    // Act & Assert
+    UserInUseException exception = assertThrows(
+        UserInUseException.class,
+        () -> userService.deleteUser(1L));
+    assertEquals(UserInUseException.IN_TEAMS, exception.getMessage());
+    // Schedule check should not be reached when team check already fails
+    verify(scheduleRepository, never()).existsByUserId(any());
+  }
+
 }

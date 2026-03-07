@@ -13,7 +13,10 @@ import de.laetum.pmbackend.controller.user.UpdateUserRequest;
 import de.laetum.pmbackend.controller.user.UserDto;
 import de.laetum.pmbackend.exception.LastAdminDeletionException;
 import de.laetum.pmbackend.exception.SelfModificationException;
+import de.laetum.pmbackend.exception.UserInUseException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.repository.user.UserRepository;
@@ -29,11 +32,17 @@ public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
+  private final TeamRepository teamRepository;
+  private final ScheduleRepository scheduleRepository;
 
-  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+      UserMapper userMapper, TeamRepository teamRepository,
+      ScheduleRepository scheduleRepository) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.userMapper = userMapper;
+    this.teamRepository = teamRepository;
+    this.scheduleRepository = scheduleRepository;
   }
 
   /**
@@ -179,7 +188,15 @@ public class UserService {
         throw new LastAdminDeletionException();
       }
     }
+    // Prevent deletion of users still assigned to teams
+    if (teamRepository.existsByUsersId(id)) {
+      throw new UserInUseException(UserInUseException.IN_TEAMS);
+    }
 
+    // Prevent deletion of users with schedule entries
+    if (scheduleRepository.existsByUserId(id)) {
+      throw new UserInUseException(UserInUseException.HAS_SCHEDULES);
+    }
     userRepository.deleteById(id);
   }
 }
