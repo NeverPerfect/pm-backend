@@ -195,6 +195,7 @@ class ScheduleServiceTest {
     User otherUser = new User();
     otherUser.setId(2L);
     otherUser.setUsername("otheruser");
+    otherUser.setActive(true);
 
     CreateScheduleRequest request = new CreateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 21));
@@ -263,6 +264,29 @@ class ScheduleServiceTest {
     assertTrue(exception.getMessage().contains("nicht zugewiesen"));
   }
 
+  @Test
+  @DisplayName("createSchedule throws exception when user is inactive")
+  void createSchedule_WhenUserInactive_ThrowsException() {
+    // Arrange
+    testUser.setActive(false);
+
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 21));
+    request.setHours(6.0);
+    request.setDescription("Work");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+    // Act & Assert
+    IllegalArgumentException exception = assertThrows(
+        IllegalArgumentException.class,
+        () -> scheduleService.createSchedule(1L, request));
+    assertTrue(exception.getMessage().contains("inaktiven Benutzer"));
+    verify(scheduleRepository, never()).save(any());
+  }
+
   // ==================== updateSchedule ====================
 
   @Test
@@ -318,6 +342,29 @@ class ScheduleServiceTest {
     // Act & Assert
     assertThrows(
         ResourceNotFoundException.class, () -> scheduleService.updateSchedule(99L, 1L, request));
+  }
+
+  @Test
+  @DisplayName("updateSchedule throws exception when user is inactive")
+  void updateSchedule_WhenUserInactive_ThrowsException() {
+    // Arrange
+    testUser.setActive(false);
+
+    UpdateScheduleRequest request = new UpdateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 22));
+    request.setHours(7.0);
+    request.setDescription("Updated");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+
+    when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
+
+    // Act & Assert
+    IllegalArgumentException exception = assertThrows(
+        IllegalArgumentException.class,
+        () -> scheduleService.updateSchedule(1L, 1L, request));
+    assertTrue(exception.getMessage().contains("inaktiven Benutzer"));
+    verify(scheduleRepository, never()).save(any());
   }
 
   // ==================== deleteSchedule ====================
