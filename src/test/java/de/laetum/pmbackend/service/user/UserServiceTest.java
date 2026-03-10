@@ -56,6 +56,9 @@ class UserServiceTest {
   @Mock
   private ScheduleRepository scheduleRepository;
 
+  @Mock
+  private PasswordGenerator passwordGenerator;
+
   @InjectMocks
   private UserService userService;
 
@@ -73,7 +76,8 @@ class UserServiceTest {
     testUser.setActive(true);
     when(userMapper.map(any(User.class))).thenAnswer(invocation -> {
       User u = invocation.getArgument(0);
-      return new UserDto(u.getId(), u.getUsername(), u.getFirstName(), u.getLastName(), u.isActive(), u.getRole());
+      return new UserDto(u.getId(), u.getUsername(), u.getFirstName(), u.getLastName(), u.isActive(), u.getRole(),
+          null);
     });
 
     // Default: authenticate as a non-admin user that won't interfere with tests
@@ -172,35 +176,35 @@ class UserServiceTest {
   // ==================== createUser ====================
 
   @Test
-  @DisplayName("createUser creates new user successfully")
-  void createUser_WithValidData_CreatesUser() {
+  @DisplayName("createUser generates password when none provided")
+  void createUser_WhenNoPassword_GeneratesPassword() {
     // Arrange
     CreateUserRequest request = new CreateUserRequest();
     request.setUsername("newuser");
-    request.setPassword("password123");
+    request.setPassword(null);
     request.setFirstName("New");
     request.setLastName("User");
     request.setRole(Role.EMPLOYEE);
     request.setActive(true);
 
     when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
-    when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
+    when(passwordGenerator.generate()).thenReturn("GeneratedPass123!");
+    when(passwordEncoder.encode("GeneratedPass123!")).thenReturn("encodedGenerated");
     when(userRepository.save(any(User.class)))
-        .thenAnswer(
-            invocation -> {
-              User saved = invocation.getArgument(0);
-              saved.setId(2L);
-              return saved;
-            });
+        .thenAnswer(invocation -> {
+          User saved = invocation.getArgument(0);
+          saved.setId(2L);
+          return saved;
+        });
 
     // Act
     UserDto result = userService.createUser(request);
 
     // Assert
     assertNotNull(result);
-    assertEquals("newuser", result.getUsername());
-    assertEquals("New", result.getFirstName());
-    verify(passwordEncoder).encode("password123");
+    assertEquals("GeneratedPass123!", result.getGeneratedPassword());
+    verify(passwordGenerator).generate();
+    verify(passwordEncoder).encode("GeneratedPass123!");
   }
 
   @Test

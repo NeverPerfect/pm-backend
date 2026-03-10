@@ -34,15 +34,17 @@ public class UserService {
   private final UserMapper userMapper;
   private final TeamRepository teamRepository;
   private final ScheduleRepository scheduleRepository;
+  private final PasswordGenerator passwordGenerator;
 
   public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
       UserMapper userMapper, TeamRepository teamRepository,
-      ScheduleRepository scheduleRepository) {
+      ScheduleRepository scheduleRepository, PasswordGenerator passwordGenerator) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.userMapper = userMapper;
     this.teamRepository = teamRepository;
     this.scheduleRepository = scheduleRepository;
+    this.passwordGenerator = passwordGenerator;
   }
 
   /**
@@ -84,27 +86,46 @@ public class UserService {
   }
 
   /**
-   * Create a new user.
+   * Create a new user. If no password is provided, a secure random
+   * password is generated and included in the response.
    *
-   * @param request User data including password
-   * @return Created user as DTO
+   * @param request User data, password optional
+   * @return Created user as DTO, with generatedPassword set if auto-generated
    */
   public UserDto createUser(CreateUserRequest request) {
     // Check if username already exists
     if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-      throw new RuntimeException("Username already exists: " + request.getUsername());
+      throw new RuntimeException("Username existiert bereits: " + request.getUsername());
+    }
+
+    // Generate password if not provided
+    String rawPassword;
+    boolean wasGenerated;
+    if (request.getPassword() != null && !request.getPassword().isBlank()) {
+      rawPassword = request.getPassword();
+      wasGenerated = false;
+    } else {
+      rawPassword = passwordGenerator.generate();
+      wasGenerated = true;
     }
 
     User user = new User();
     user.setUsername(request.getUsername());
-    user.setPassword(passwordEncoder.encode(request.getPassword()));
+    user.setPassword(passwordEncoder.encode(rawPassword));
     user.setFirstName(request.getFirstName());
     user.setLastName(request.getLastName());
     user.setRole(request.getRole());
     user.setActive(request.isActive());
 
     User savedUser = userRepository.save(user);
-    return userMapper.map(savedUser);
+    UserDto dto = userMapper.map(savedUser);
+
+    // Only include generated password in response (shown once)
+    if (wasGenerated) {
+      dto.setGeneratedPassword(rawPassword);
+    }
+
+    return dto;
   }
 
   /**

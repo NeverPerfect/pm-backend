@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * DTO for transferring user data without sensitive information.
- * Used for API responses where password must not be exposed.
+ * The generatedPassword field is only set once during user creation
+ * when a password was auto-generated.
  */
 @Data
 @NoArgsConstructor
@@ -19,4 +20,5 @@ public class UserDto {
     private String lastName;
     private boolean active;
     private Role role;
+    private String generatedPassword; // Only set on creation with auto-generated password
 }

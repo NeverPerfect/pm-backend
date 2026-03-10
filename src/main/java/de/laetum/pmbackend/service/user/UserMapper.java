@@ -1,7 +1,7 @@
 package de.laetum.pmbackend.service.user;
 
 import de.laetum.pmbackend.controller.user.UserDto;
-import de.laetum.pmbackend.repository.user.User; 
+import de.laetum.pmbackend.repository.user.User;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,12 +19,13 @@ public class UserMapper {
      */
     public UserDto map(User user) {
         return new UserDto(
-            user.getId(),
-            user.getUsername(),
-            user.getFirstName(),
-            user.getLastName(),
-            user.isActive(),
-            user.getRole()
+                user.getId(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.isActive(),
+                user.getRole(),
+                null // generatedPassword - only set during user creation
         );
     }
 }
