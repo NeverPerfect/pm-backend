@@ -185,6 +185,26 @@ public class UserService {
   }
 
   /**
+   * Resets a user's password to a new auto-generated password.
+   *
+   * @param id User ID
+   * @return UserDto with the generated password set
+   * @throws ResourceNotFoundException if user does not exist
+   */
+  public UserDto resetPassword(Long id) {
+    User user = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+    String newPassword = passwordGenerator.generate();
+    user.setPassword(passwordEncoder.encode(newPassword));
+    userRepository.save(user);
+
+    UserDto dto = userMapper.map(user);
+    dto.setGeneratedPassword(newPassword);
+    return dto;
+  }
+
+  /**
    * Delete a user.
    *
    * @param id User ID

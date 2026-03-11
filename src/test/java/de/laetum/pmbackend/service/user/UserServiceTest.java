@@ -309,6 +309,38 @@ class UserServiceTest {
     assertTrue(exception.getMessage().contains("already exists"));
   }
 
+  // ==================== resetPassword ====================
+
+  @Test
+  @DisplayName("resetPassword generates new password and returns it")
+  void resetPassword_WhenUserExists_ReturnsGeneratedPassword() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(passwordGenerator.generate()).thenReturn("NewSecurePass123!");
+    when(passwordEncoder.encode("NewSecurePass123!")).thenReturn("encodedNewPass");
+    when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+    // Act
+    UserDto result = userService.resetPassword(1L);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals("NewSecurePass123!", result.getGeneratedPassword());
+    verify(passwordEncoder).encode("NewSecurePass123!");
+    verify(userRepository).save(testUser);
+  }
+
+  @Test
+  @DisplayName("resetPassword throws exception when user not found")
+  void resetPassword_WhenUserNotFound_ThrowsException() {
+    // Arrange
+    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThrows(ResourceNotFoundException.class,
+        () -> userService.resetPassword(99L));
+  }
+
   // ==================== deleteUser ====================
 
   @Test
