@@ -32,15 +32,6 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Handles invalid method arguments.
-   */
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-    ErrorResponse error = new ErrorResponse(400, ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-  }
-
-  /**
    * Handles attempts by users to perform forbidden self-modifications
    * (e.g., self-deletion or admin self-demotion).
    */
@@ -66,9 +57,40 @@ public class GlobalExceptionHandler {
    * by other entities (teams, schedules).
    */
   @ExceptionHandler(UserInUseException.class)
-  public ResponseEntity<ErrorResponse> handleUserInUseException(
-      UserInUseException ex) {
+  public ResponseEntity<ErrorResponse> handleUserInUseException(UserInUseException ex) {
     ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
+  /**
+   * Handles uniqueness constraint violations (e.g., duplicate username).
+   */
+  @ExceptionHandler(DuplicateResourceException.class)
+  public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
+      DuplicateResourceException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
+  /**
+   * Handles business rule violations where the user is not allowed
+   * to perform the requested operation.
+   */
+  @ExceptionHandler(ForbiddenOperationException.class)
+  public ResponseEntity<ErrorResponse> handleForbiddenOperationException(
+      ForbiddenOperationException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+  }
+
+  /**
+   * Handles schedule-specific validation failures
+   * (e.g., user not in team, inactive project).
+   */
+  @ExceptionHandler(ScheduleValidationException.class)
+  public ResponseEntity<ErrorResponse> handleScheduleValidationException(
+      ScheduleValidationException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
   }
 }

@@ -3,6 +3,8 @@ package de.laetum.pmbackend.service.schedule;
 import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest;
 import de.laetum.pmbackend.controller.schedule.ScheduleDto;
 import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
+import de.laetum.pmbackend.exception.ForbiddenOperationException;
+import de.laetum.pmbackend.exception.ScheduleValidationException;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.schedule.Schedule;
 import de.laetum.pmbackend.repository.team.Team;
@@ -17,6 +19,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service for schedule management operations. Handles CRUD operations for time
+ * bookings
+ * with validation of user-team-project relationships.
+ */
 @Service
 @Transactional
 public class ScheduleService {
@@ -40,11 +47,17 @@ public class ScheduleService {
     this.scheduleMapper = scheduleMapper;
   }
 
-  /** Gets all schedules of a user. */
+  /**
+   * Get all schedules for a user, ordered by date descending.
+   *
+   * @param userId User ID
+   * @return List of schedule DTOs
+   * @throws ResourceNotFoundException if user not found
+   */
   public List<ScheduleDto> getSchedulesByUserId(Long userId) {
-    // Check if user exists
     if (!userRepository.existsById(userId)) {
-      throw new ResourceNotFoundException("User nicht gefunden mit ID: " + userId);
+      throw new ResourceNotFoundException(
+          String.format(ResourceNotFoundException.USER_NOT_FOUND, userId));
     }
 
     return scheduleRepository.findByUserIdOrderByDateDesc(userId).stream()
@@ -52,49 +65,66 @@ public class ScheduleService {
         .collect(Collectors.toList());
   }
 
-  /** Gets a schedule by ID. */
+  /**
+   * Get a single schedule by ID.
+   *
+   * @param id Schedule ID
+   * @return Schedule as DTO
+   * @throws ResourceNotFoundException if schedule not found
+   */
   public ScheduleDto getScheduleById(Long id) {
     Schedule schedule = scheduleRepository
         .findById(id)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("Schedule nicht gefunden mit ID: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.SCHEDULE_NOT_FOUND, id)));
     return scheduleMapper.map(schedule);
   }
 
   /**
-   * Creates a new schedule. Validates: user is in the team, project is active,
-   * team belongs to the project.
+   * Create a new schedule entry. Validates that the user is active, belongs to
+   * the team,
+   * the project is active, and the team is assigned to the project.
+   *
+   * @param userId  User ID
+   * @param request Schedule data
+   * @return Created schedule as DTO
+   * @throws ResourceNotFoundException   if user, team or project not found
+   * @throws ScheduleValidationException if validation fails
    */
   public ScheduleDto createSchedule(Long userId, CreateScheduleRequest request) {
     User user = userRepository
         .findById(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("User nicht gefunden"));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, userId)));
+
     // Prevent time bookings for inactive users
     if (!user.isActive()) {
-      throw new IllegalArgumentException("Die Planung kann für einen inaktiven Benutzer nicht erstellt werden");
+      throw new ScheduleValidationException(ScheduleValidationException.USER_INACTIVE_CREATE);
     }
 
     Team team = teamRepository
         .findById(request.getTeamId())
-        .orElseThrow(() -> new ResourceNotFoundException("Team nicht gefunden"));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, request.getTeamId())));
 
     Project project = projectRepository
         .findById(request.getProjectId())
-        .orElseThrow(() -> new ResourceNotFoundException("Projekt nicht gefunden"));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, request.getProjectId())));
 
     // Validation: User must be in the team
     if (!team.getUsers().contains(user)) {
-      throw new IllegalArgumentException("User ist nicht Mitglied dieses Teams");
+      throw new ScheduleValidationException(ScheduleValidationException.USER_NOT_IN_TEAM);
     }
 
     // Validation: Project must be active
     if (!project.isActive()) {
-      throw new IllegalArgumentException("Projekt ist nicht aktiv");
+      throw new ScheduleValidationException(ScheduleValidationException.PROJECT_NOT_ACTIVE);
     }
 
     // Validation: Team must be assigned to the project
     if (!project.getTeams().contains(team)) {
-      throw new IllegalArgumentException("Team ist diesem Projekt nicht zugewiesen");
+      throw new ScheduleValidationException(ScheduleValidationException.TEAM_NOT_IN_PROJECT);
     }
 
     Schedule schedule = new Schedule();
@@ -109,44 +139,57 @@ public class ScheduleService {
     return scheduleMapper.map(saved);
   }
 
-  /** Updates a schedule. Checks if the schedule belongs to the user. */
+  /**
+   * Update an existing schedule entry. Validates ownership and the same
+   * constraints as creation.
+   *
+   * @param id      Schedule ID
+   * @param userId  User ID (must match schedule owner)
+   * @param request Updated schedule data
+   * @return Updated schedule as DTO
+   * @throws ResourceNotFoundException   if schedule, team or project not found
+   * @throws ForbiddenOperationException if user doesn't own the schedule
+   * @throws ScheduleValidationException if validation fails
+   */
   public ScheduleDto updateSchedule(Long id, Long userId, UpdateScheduleRequest request) {
     Schedule schedule = scheduleRepository
         .findById(id)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("Schedule nicht gefunden mit ID: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.SCHEDULE_NOT_FOUND, id)));
 
     // Security: Schedule must belong to the user
     if (!schedule.getUser().getId().equals(userId)) {
-      throw new IllegalArgumentException("Keine Berechtigung für diesen Schedule");
+      throw new ForbiddenOperationException(ForbiddenOperationException.SCHEDULE_NOT_OWNED);
     }
 
     User user = schedule.getUser();
 
     // Prevent time bookings for inactive users
     if (!user.isActive()) {
-      throw new IllegalArgumentException("Der Schedule kann für einen inaktiven Benutzer nicht aktualisiert werden");
+      throw new ScheduleValidationException(ScheduleValidationException.USER_INACTIVE_UPDATE);
     }
 
     Team team = teamRepository
         .findById(request.getTeamId())
-        .orElseThrow(() -> new ResourceNotFoundException("Team nicht gefunden"));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, request.getTeamId())));
 
     Project project = projectRepository
         .findById(request.getProjectId())
-        .orElseThrow(() -> new ResourceNotFoundException("Projekt nicht gefunden"));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, request.getProjectId())));
 
     // Same validations as for creation
     if (!team.getUsers().contains(user)) {
-      throw new IllegalArgumentException("User ist nicht Mitglied dieses Teams");
+      throw new ScheduleValidationException(ScheduleValidationException.USER_NOT_IN_TEAM);
     }
 
     if (!project.isActive()) {
-      throw new IllegalArgumentException("Projekt ist nicht aktiv");
+      throw new ScheduleValidationException(ScheduleValidationException.PROJECT_NOT_ACTIVE);
     }
 
     if (!project.getTeams().contains(team)) {
-      throw new IllegalArgumentException("Team ist diesem Projekt nicht zugewiesen");
+      throw new ScheduleValidationException(ScheduleValidationException.TEAM_NOT_IN_PROJECT);
     }
 
     schedule.setDate(request.getDate());
@@ -159,15 +202,22 @@ public class ScheduleService {
     return scheduleMapper.map(saved);
   }
 
-  /** Deletes a schedule. Checks if the schedule belongs to the user. */
+  /**
+   * Delete a schedule entry. Only the owning user may delete it.
+   *
+   * @param id     Schedule ID
+   * @param userId User ID (must match schedule owner)
+   * @throws ResourceNotFoundException   if schedule not found
+   * @throws ForbiddenOperationException if user doesn't own the schedule
+   */
   public void deleteSchedule(Long id, Long userId) {
     Schedule schedule = scheduleRepository
         .findById(id)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("Schedule nicht gefunden mit ID: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.SCHEDULE_NOT_FOUND, id)));
 
     if (!schedule.getUser().getId().equals(userId)) {
-      throw new IllegalArgumentException("Keine Berechtigung für diesen Schedule");
+      throw new ForbiddenOperationException(ForbiddenOperationException.SCHEDULE_NOT_OWNED);
     }
 
     scheduleRepository.delete(schedule);

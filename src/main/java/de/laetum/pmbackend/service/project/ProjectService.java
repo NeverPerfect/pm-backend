@@ -1,23 +1,23 @@
 package de.laetum.pmbackend.service.project;
 
-import de.laetum.pmbackend.controller.project.CreateProjectRequest; 
-import de.laetum.pmbackend.controller.project.ProjectDto; 
-import de.laetum.pmbackend.controller.project.UpdateProjectRequest; 
-import de.laetum.pmbackend.repository.project.Project;  
-import de.laetum.pmbackend.repository.team.Team;    
-import de.laetum.pmbackend.repository.user.User; 
+import de.laetum.pmbackend.controller.project.CreateProjectRequest;
+import de.laetum.pmbackend.controller.project.ProjectDto;
+import de.laetum.pmbackend.controller.project.UpdateProjectRequest;
+import de.laetum.pmbackend.repository.project.Project;
+import de.laetum.pmbackend.repository.team.Team;
+import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.project.ProjectRepository; 
-import de.laetum.pmbackend.repository.team.TeamRepository;   
-import de.laetum.pmbackend.repository.user.UserRepository;  
+import de.laetum.pmbackend.repository.project.ProjectRepository;
+import de.laetum.pmbackend.repository.team.TeamRepository;
+import de.laetum.pmbackend.repository.user.UserRepository;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service for project management operations. Handles CRUD operations for projects and team
+ * Service for project management operations. Handles CRUD operations for
+ * projects and team
  * assignments.
  */
 @Service
@@ -57,10 +57,10 @@ public class ProjectService {
    * @throws ResourceNotFoundException if project not found
    */
   public ProjectDto getProjectById(Long id) {
-    Project project =
-        projectRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, id)));
     return projectMapper.map(project);
   }
 
@@ -79,16 +79,16 @@ public class ProjectService {
   /**
    * Update an existing project.
    *
-   * @param id Project ID
+   * @param id      Project ID
    * @param request Updated project data
    * @return Updated project as DTO
    * @throws ResourceNotFoundException if project not found
    */
   public ProjectDto updateProject(Long id, UpdateProjectRequest request) {
-    Project project =
-        projectRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+    Project project = projectRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, id)));
 
     project.setName(request.getName());
     project.setDescription(request.getDescription());
@@ -106,7 +106,8 @@ public class ProjectService {
    */
   public void deleteProject(Long id) {
     if (!projectRepository.existsById(id)) {
-      throw new ResourceNotFoundException("Project not found with id: " + id);
+      throw new ResourceNotFoundException(
+          String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, id));
     }
     projectRepository.deleteById(id);
   }
@@ -115,20 +116,19 @@ public class ProjectService {
    * Add a team to a project.
    *
    * @param projectId Project ID
-   * @param teamId Team ID
+   * @param teamId    Team ID
    * @return Updated project as DTO
    * @throws ResourceNotFoundException if project or team not found
    */
   public ProjectDto addTeamToProject(Long projectId, Long teamId) {
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Project not found with id: " + projectId));
-    Team team =
-        teamRepository
-            .findById(teamId)
-            .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + teamId));
+    Project project = projectRepository
+        .findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, projectId)));
+    Team team = teamRepository
+        .findById(teamId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, teamId)));
 
     project.addTeam(team);
     Project savedProject = projectRepository.save(project);
@@ -139,31 +139,37 @@ public class ProjectService {
    * Remove a team from a project.
    *
    * @param projectId Project ID
-   * @param teamId Team ID
+   * @param teamId    Team ID
    * @return Updated project as DTO
    * @throws ResourceNotFoundException if project or team not found
    */
   public ProjectDto removeTeamFromProject(Long projectId, Long teamId) {
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Project not found with id: " + projectId));
-    Team team =
-        teamRepository
-            .findById(teamId)
-            .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + teamId));
+    Project project = projectRepository
+        .findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, projectId)));
+    Team team = teamRepository
+        .findById(teamId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, teamId)));
 
     project.removeTeam(team);
     Project savedProject = projectRepository.save(project);
     return projectMapper.map(savedProject);
   }
 
+  /**
+   * Get all active projects that a user is assigned to via teams.
+   *
+   * @param username Username to look up
+   * @return List of active projects the user participates in
+   * @throws ResourceNotFoundException if user not found
+   */
   public List<ProjectDto> getProjectsByUsername(String username) {
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("User nicht gefunden"));
+    User user = userRepository
+        .findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND_BY_USERNAME, username)));
 
     return projectRepository.findByActiveTrue().stream()
         .filter(
@@ -171,5 +177,4 @@ public class ProjectService {
         .map(projectMapper::map)
         .collect(Collectors.toList());
   }
-
 }

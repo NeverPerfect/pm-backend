@@ -1,11 +1,11 @@
 package de.laetum.pmbackend.controller.schedule;
 
-import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest; 
-import de.laetum.pmbackend.controller.schedule.ScheduleDto;    
+import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest;
+import de.laetum.pmbackend.controller.schedule.ScheduleDto;
 import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
-import de.laetum.pmbackend.repository.user.User;  
-import de.laetum.pmbackend.repository.user.UserRepository;   
-import de.laetum.pmbackend.service.schedule.ScheduleService;  
+import de.laetum.pmbackend.repository.user.User;
+import de.laetum.pmbackend.repository.user.UserRepository;
+import de.laetum.pmbackend.service.schedule.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,12 +17,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import de.laetum.pmbackend.exception.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/api/schedules")
-@Tag(
-    name = "Stundenbuchung",
-    description = "Zeiterfassung für Mitarbeiter und Verwaltung durch Manager/Admin")
+@Tag(name = "Stundenbuchung", description = "Zeiterfassung für Mitarbeiter und Verwaltung durch Manager/Admin")
 public class ScheduleController {
 
   private final ScheduleService scheduleService;
@@ -35,12 +34,10 @@ public class ScheduleController {
 
   // ==================== EIGENE SCHEDULES ====================
 
-  @Operation(
-      summary = "Eigene Buchungen abrufen",
-      description = "Gibt alle Stundenbuchungen des eingeloggten Benutzers zurück")
+  @Operation(summary = "Eigene Buchungen abrufen", description = "Gibt alle Stundenbuchungen des eingeloggten Benutzers zurück")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
-    @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+      @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
   })
   @GetMapping
   public ResponseEntity<List<ScheduleDto>> getMySchedules(Authentication authentication) {
@@ -49,13 +46,11 @@ public class ScheduleController {
     return ResponseEntity.ok(schedules);
   }
 
-  @Operation(
-      summary = "Buchung nach ID abrufen",
-      description = "Gibt eine einzelne Stundenbuchung zurück")
+  @Operation(summary = "Buchung nach ID abrufen", description = "Gibt eine einzelne Stundenbuchung zurück")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Buchung gefunden"),
-    @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
-    @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+      @ApiResponse(responseCode = "200", description = "Buchung gefunden"),
+      @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
   })
   @GetMapping("/{id}")
   public ResponseEntity<ScheduleDto> getScheduleById(
@@ -64,15 +59,11 @@ public class ScheduleController {
     return ResponseEntity.ok(schedule);
   }
 
-  @Operation(
-      summary = "Neue Buchung erstellen",
-      description = "Erstellt eine neue Stundenbuchung für den eingeloggten Benutzer")
+  @Operation(summary = "Neue Buchung erstellen", description = "Erstellt eine neue Stundenbuchung für den eingeloggten Benutzer")
   @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Buchung erstellt"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Ungültige Anfrage (z.B. User nicht im Team, Projekt inaktiv)"),
-    @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+      @ApiResponse(responseCode = "201", description = "Buchung erstellt"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage (z.B. User nicht im Team, Projekt inaktiv)"),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
   })
   @PostMapping
   public ResponseEntity<ScheduleDto> createSchedule(
@@ -82,15 +73,15 @@ public class ScheduleController {
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
-  @Operation(
-      summary = "Buchung aktualisieren",
-      description = "Aktualisiert eine eigene Stundenbuchung")
+  @Operation(summary = "Buchung aktualisieren", description = "Aktualisiert eine eigene Stundenbuchung")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Buchung aktualisiert"),
-    @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+      @ApiResponse(responseCode = "200", description = "Buchung aktualisiert"),
+      @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung für diese Buchung"),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
   })
+
   @PutMapping("/{id}")
   public ResponseEntity<ScheduleDto> updateSchedule(
       @Parameter(description = "ID der Buchung") @PathVariable Long id,
@@ -103,10 +94,12 @@ public class ScheduleController {
 
   @Operation(summary = "Buchung löschen", description = "Löscht eine eigene Stundenbuchung")
   @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Buchung gelöscht"),
-    @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
-    @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
+      @ApiResponse(responseCode = "204", description = "Buchung gelöscht"),
+      @ApiResponse(responseCode = "404", description = "Buchung nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung für diese Buchung"),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert")
   })
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteSchedule(
       @Parameter(description = "ID der Buchung") @PathVariable Long id,
@@ -118,22 +111,20 @@ public class ScheduleController {
 
   private Long getCurrentUserId(Authentication authentication) {
     String username = authentication.getName();
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User nicht gefunden"));
+    User user = userRepository
+        .findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND_BY_USERNAME, username)));
     return user.getId();
   }
 
   // ==================== ADMIN/MANAGER ENDPOINTS ====================
 
-  @Operation(
-      summary = "Buchungen eines Benutzers abrufen",
-      description = "Gibt alle Stundenbuchungen eines bestimmten Benutzers zurück (MANAGER/ADMIN)")
+  @Operation(summary = "Buchungen eines Benutzers abrufen", description = "Gibt alle Stundenbuchungen eines bestimmten Benutzers zurück (MANAGER/ADMIN)")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
-    @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
+      @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @GetMapping("/user/{userId}")
   public ResponseEntity<List<ScheduleDto>> getSchedulesByUserId(
@@ -142,14 +133,12 @@ public class ScheduleController {
     return ResponseEntity.ok(schedules);
   }
 
-  @Operation(
-      summary = "Buchung für Benutzer erstellen",
-      description = "Erstellt eine Stundenbuchung für einen bestimmten Benutzer (MANAGER/ADMIN)")
+  @Operation(summary = "Buchung für Benutzer erstellen", description = "Erstellt eine Stundenbuchung für einen bestimmten Benutzer (MANAGER/ADMIN)")
   @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Buchung erstellt"),
-    @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "201", description = "Buchung erstellt"),
+      @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PostMapping("/user/{userId}")
   public ResponseEntity<ScheduleDto> createScheduleForUser(
@@ -159,14 +148,12 @@ public class ScheduleController {
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
-  @Operation(
-      summary = "Buchung eines Benutzers aktualisieren",
-      description = "Aktualisiert eine Stundenbuchung eines bestimmten Benutzers (MANAGER/ADMIN)")
+  @Operation(summary = "Buchung eines Benutzers aktualisieren", description = "Aktualisiert eine Stundenbuchung eines bestimmten Benutzers (MANAGER/ADMIN)")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Buchung aktualisiert"),
-    @ApiResponse(responseCode = "404", description = "Buchung oder Benutzer nicht gefunden"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Buchung aktualisiert"),
+      @ApiResponse(responseCode = "404", description = "Buchung oder Benutzer nicht gefunden"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PutMapping("/user/{userId}/{scheduleId}")
   public ResponseEntity<ScheduleDto> updateScheduleForUser(
@@ -177,13 +164,11 @@ public class ScheduleController {
     return ResponseEntity.ok(updated);
   }
 
-  @Operation(
-      summary = "Buchung eines Benutzers löschen",
-      description = "Löscht eine Stundenbuchung eines bestimmten Benutzers (MANAGER/ADMIN)")
+  @Operation(summary = "Buchung eines Benutzers löschen", description = "Löscht eine Stundenbuchung eines bestimmten Benutzers (MANAGER/ADMIN)")
   @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Buchung gelöscht"),
-    @ApiResponse(responseCode = "404", description = "Buchung oder Benutzer nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "204", description = "Buchung gelöscht"),
+      @ApiResponse(responseCode = "404", description = "Buchung oder Benutzer nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @DeleteMapping("/user/{userId}/{scheduleId}")
   public ResponseEntity<Void> deleteScheduleForUser(

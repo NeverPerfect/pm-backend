@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import de.laetum.pmbackend.controller.schedule.CreateScheduleRequest;
 import de.laetum.pmbackend.controller.schedule.ScheduleDto;
 import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
+import de.laetum.pmbackend.exception.ForbiddenOperationException;
+import de.laetum.pmbackend.exception.ScheduleValidationException;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.repository.schedule.Schedule;
@@ -17,8 +19,6 @@ import de.laetum.pmbackend.repository.project.ProjectRepository;
 import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.UserRepository;
-import de.laetum.pmbackend.service.schedule.ScheduleService;
-import de.laetum.pmbackend.service.schedule.ScheduleMapper;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -209,9 +209,9 @@ class ScheduleServiceTest {
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
     // Act & Assert
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class, () -> scheduleService.createSchedule(2L, request));
-    assertTrue(exception.getMessage().contains("nicht Mitglied"));
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class, () -> scheduleService.createSchedule(2L, request));
+    assertEquals(ScheduleValidationException.USER_NOT_IN_TEAM, exception.getMessage());
   }
 
   @Test
@@ -234,9 +234,9 @@ class ScheduleServiceTest {
     when(projectRepository.findById(2L)).thenReturn(Optional.of(inactiveProject));
 
     // Act & Assert
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class, () -> scheduleService.createSchedule(1L, request));
-    assertTrue(exception.getMessage().contains("nicht aktiv"));
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class, () -> scheduleService.createSchedule(1L, request));
+    assertEquals(ScheduleValidationException.PROJECT_NOT_ACTIVE, exception.getMessage());
   }
 
   @Test
@@ -259,9 +259,9 @@ class ScheduleServiceTest {
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
 
     // Act & Assert
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class, () -> scheduleService.createSchedule(1L, request));
-    assertTrue(exception.getMessage().contains("nicht zugewiesen"));
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class, () -> scheduleService.createSchedule(1L, request));
+    assertEquals(ScheduleValidationException.TEAM_NOT_IN_PROJECT, exception.getMessage());
   }
 
   @Test
@@ -280,10 +280,10 @@ class ScheduleServiceTest {
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
     // Act & Assert
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class,
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
         () -> scheduleService.createSchedule(1L, request));
-    assertTrue(exception.getMessage().contains("inaktiven Benutzer"));
+    assertEquals(ScheduleValidationException.USER_INACTIVE_CREATE, exception.getMessage());
     verify(scheduleRepository, never()).save(any());
   }
 
@@ -326,10 +326,10 @@ class ScheduleServiceTest {
 
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 
-    // Act & Assert - User 99 tries to update User 1's schedule
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class, () -> scheduleService.updateSchedule(1L, 99L, request));
-    assertTrue(exception.getMessage().contains("Keine Berechtigung"));
+    // Act & Assert
+    ForbiddenOperationException exception = assertThrows(
+        ForbiddenOperationException.class, () -> scheduleService.updateSchedule(1L, 99L, request));
+    assertEquals(ForbiddenOperationException.SCHEDULE_NOT_OWNED, exception.getMessage());
   }
 
   @Test
@@ -360,10 +360,10 @@ class ScheduleServiceTest {
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 
     // Act & Assert
-    IllegalArgumentException exception = assertThrows(
-        IllegalArgumentException.class,
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
         () -> scheduleService.updateSchedule(1L, 1L, request));
-    assertTrue(exception.getMessage().contains("inaktiven Benutzer"));
+    assertEquals(ScheduleValidationException.USER_INACTIVE_UPDATE, exception.getMessage());
     verify(scheduleRepository, never()).save(any());
   }
 
@@ -388,10 +388,10 @@ class ScheduleServiceTest {
     // Arrange
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 
-    // Act & Assert - User 99 tries to delete User 1's schedule
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+    // Act & Assert
+    ForbiddenOperationException exception = assertThrows(ForbiddenOperationException.class,
         () -> scheduleService.deleteSchedule(1L, 99L));
-    assertTrue(exception.getMessage().contains("Keine Berechtigung"));
+    assertEquals(ForbiddenOperationException.SCHEDULE_NOT_OWNED, exception.getMessage());
     verify(scheduleRepository, never()).delete(any());
   }
 

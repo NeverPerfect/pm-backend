@@ -1,21 +1,21 @@
 package de.laetum.pmbackend.service.team;
 
 import de.laetum.pmbackend.controller.team.CreateTeamRequest;
-import de.laetum.pmbackend.controller.team.TeamDto;   
-import de.laetum.pmbackend.controller.team.UpdateTeamRequest; 
-import de.laetum.pmbackend.repository.team.Team;   
-import de.laetum.pmbackend.repository.user.User;   
+import de.laetum.pmbackend.controller.team.TeamDto;
+import de.laetum.pmbackend.controller.team.UpdateTeamRequest;
+import de.laetum.pmbackend.repository.team.Team;
+import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
-import de.laetum.pmbackend.repository.team.TeamRepository;  
-import de.laetum.pmbackend.repository.user.UserRepository;  
+import de.laetum.pmbackend.repository.team.TeamRepository;
+import de.laetum.pmbackend.repository.user.UserRepository;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service for team management operations. Handles CRUD operations for teams and user assignments.
+ * Service for team management operations. Handles CRUD operations for teams and
+ * user assignments.
  */
 @Service
 @Transactional
@@ -30,7 +30,7 @@ public class TeamService {
     this.userRepository = userRepository;
     this.teamMapper = teamMapper;
   }
-  
+
   /**
    * Get all teams.
    *
@@ -48,10 +48,10 @@ public class TeamService {
    * @throws ResourceNotFoundException if team not found
    */
   public TeamDto getTeamById(Long id) {
-    Team team =
-        teamRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
+    Team team = teamRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, id)));
     return teamMapper.map(team);
   }
 
@@ -70,16 +70,16 @@ public class TeamService {
   /**
    * Update an existing team.
    *
-   * @param id Team ID
+   * @param id      Team ID
    * @param request Updated team data
    * @return Updated team as DTO
    * @throws ResourceNotFoundException if team not found
    */
   public TeamDto updateTeam(Long id, UpdateTeamRequest request) {
-    Team team =
-        teamRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
+    Team team = teamRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, id)));
 
     team.setName(request.getName());
     team.setDescription(request.getDescription());
@@ -96,7 +96,8 @@ public class TeamService {
    */
   public void deleteTeam(Long id) {
     if (!teamRepository.existsById(id)) {
-      throw new ResourceNotFoundException("Team not found with id: " + id);
+      throw new ResourceNotFoundException(
+          String.format(ResourceNotFoundException.TEAM_NOT_FOUND, id));
     }
     teamRepository.deleteById(id);
   }
@@ -110,14 +111,14 @@ public class TeamService {
    * @throws ResourceNotFoundException if team or user not found
    */
   public TeamDto addUserToTeam(Long teamId, Long userId) {
-    Team team =
-        teamRepository
-            .findById(teamId)
-            .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + teamId));
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    Team team = teamRepository
+        .findById(teamId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, teamId)));
+    User user = userRepository
+        .findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, userId)));
 
     team.addUser(user);
     Team savedTeam = teamRepository.save(team);
@@ -133,25 +134,32 @@ public class TeamService {
    * @throws ResourceNotFoundException if team or user not found
    */
   public TeamDto removeUserFromTeam(Long teamId, Long userId) {
-    Team team =
-        teamRepository
-            .findById(teamId)
-            .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + teamId));
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    Team team = teamRepository
+        .findById(teamId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.TEAM_NOT_FOUND, teamId)));
+    User user = userRepository
+        .findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, userId)));
 
     team.removeUser(user);
     Team savedTeam = teamRepository.save(team);
     return teamMapper.map(savedTeam);
   }
 
+  /**
+   * Get all teams that a user belongs to.
+   *
+   * @param username Username to look up
+   * @return List of teams the user is a member of
+   * @throws ResourceNotFoundException if user not found
+   */
   public List<TeamDto> getTeamsByUsername(String username) {
-    User user =
-        userRepository
-            .findByUsername(username)
-            .orElseThrow(() -> new ResourceNotFoundException("User nicht gefunden"));
+    User user = userRepository
+        .findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND_BY_USERNAME, username)));
 
     return teamRepository.findAll().stream()
         .filter(team -> team.getUsers().contains(user))

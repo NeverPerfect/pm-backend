@@ -1,4 +1,4 @@
-package de.laetum.pmbackend.service.auth;  
+package de.laetum.pmbackend.service.auth;
 
 import de.laetum.pmbackend.controller.auth.LoginRequest;
 import de.laetum.pmbackend.controller.auth.LoginResponse;
@@ -9,7 +9,10 @@ import de.laetum.pmbackend.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-/** Service für Authentifizierung und Login. Verarbeitet Login-Anfragen und generiert JWT-Tokens. */
+/**
+ * Service for authentication and login. Processes login requests and generates
+ * JWT tokens.
+ */
 @Service
 public class AuthService {
 
@@ -25,18 +28,18 @@ public class AuthService {
   }
 
   /**
-   * Authentifiziert einen Benutzer und gibt ein JWT-Token zurück.
+   * Authenticates a user and returns a JWT token.
    *
-   * @param request Login-Daten (Username und Passwort)
-   * @return LoginResponse mit JWT-Token, User-ID, Username und Rolle
-   * @throws AuthenticationException wenn Username nicht existiert, Passwort falsch ist oder User
-   *     inaktiv ist
+   * @param request Login credentials (username and password)
+   * @return LoginResponse with JWT token, user ID, username and role
+   * @throws AuthenticationException if username does not exist, password is
+   *                                 wrong,
+   *                                 or user account is inactive
    */
   public LoginResponse login(LoginRequest request) {
-    User user =
-        userRepository
-            .findByUsername(request.getUsername())
-            .orElseThrow(() -> new AuthenticationException("Invalid username or password"));
+    User user = userRepository
+        .findByUsername(request.getUsername())
+        .orElseThrow(() -> new AuthenticationException("Invalid username or password"));
 
     if (!user.isActive()) {
       throw new AuthenticationException("User account is inactive");

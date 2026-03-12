@@ -56,7 +56,8 @@ public class UserController {
   @ApiResponses({
       @ApiResponse(responseCode = "201", description = "Benutzer erstellt"),
       @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-      @ApiResponse(responseCode = "403", description = "Keine Berechtigung (nur ADMIN)")
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung (nur ADMIN)"),
+      @ApiResponse(responseCode = "409", description = "Benutzername existiert bereits")
   })
   @PostMapping
   public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserRequest request) {
@@ -69,8 +70,10 @@ public class UserController {
       @ApiResponse(responseCode = "200", description = "Benutzer aktualisiert"),
       @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
       @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung"),
+      @ApiResponse(responseCode = "409", description = "Benutzername existiert bereits")
   })
+
   @PutMapping("/{id}")
   public ResponseEntity<UserDto> updateUser(
       @Parameter(description = "ID des Benutzers") @PathVariable Long id,

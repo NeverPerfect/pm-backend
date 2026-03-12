@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import de.laetum.pmbackend.controller.user.CreateUserRequest;
 import de.laetum.pmbackend.controller.user.UpdateUserRequest;
 import de.laetum.pmbackend.controller.user.UserDto;
+import de.laetum.pmbackend.exception.DuplicateResourceException;
+import de.laetum.pmbackend.exception.ForbiddenOperationException;
 import de.laetum.pmbackend.exception.LastAdminDeletionException;
 import de.laetum.pmbackend.exception.SelfModificationException;
 import de.laetum.pmbackend.exception.UserInUseException;
@@ -23,8 +25,7 @@ import de.laetum.pmbackend.repository.user.UserRepository;
 
 /**
  * Service for user management operations. Handles CRUD operations and
- * conversion between Entity and
- * DTO.
+ * conversion between Entity and DTO.
  */
 @Service
 public class UserService {
@@ -61,12 +62,13 @@ public class UserService {
    *
    * @param id User ID
    * @return User as DTO
-   * @throws RuntimeException if user not found
+   * @throws ResourceNotFoundException if user not found
    */
   public UserDto getUserById(Long id) {
     User user = userRepository
         .findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, id)));
     return userMapper.map(user);
   }
 
@@ -82,7 +84,7 @@ public class UserService {
     String username = auth.getName();
     return userRepository.findByUsername(username)
         .orElseThrow(() -> new ResourceNotFoundException(
-            "Authenticated user not found: " + username));
+            String.format(ResourceNotFoundException.USER_NOT_FOUND_BY_USERNAME, username)));
   }
 
   /**
@@ -91,11 +93,13 @@ public class UserService {
    *
    * @param request User data, password optional
    * @return Created user as DTO, with generatedPassword set if auto-generated
+   * @throws DuplicateResourceException if username already exists
    */
   public UserDto createUser(CreateUserRequest request) {
     // Check if username already exists
     if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-      throw new RuntimeException("Username existiert bereits: " + request.getUsername());
+      throw new DuplicateResourceException(
+          String.format(DuplicateResourceException.USERNAME_EXISTS, request.getUsername()));
     }
 
     // Generate password if not provided
@@ -134,10 +138,17 @@ public class UserService {
    * @param id      User ID
    * @param request Updated user data
    * @return Updated user as DTO
+   * @throws ResourceNotFoundException   if user not found
+   * @throws SelfModificationException   if admin tries to demote or deactivate
+   *                                     themselves
+   * @throws ForbiddenOperationException if non-admin tries to modify an admin
+   * @throws DuplicateResourceException  if new username conflicts with existing
+   *                                     user
    */
   public UserDto updateUser(Long id, UpdateUserRequest request) {
     User user = userRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, id)));
 
     // Prevent admins from removing their own admin role
     User currentUser = getAuthenticatedUser();
@@ -158,15 +169,16 @@ public class UserService {
 
     // Only admins can modify other admin users
     if (user.getRole() == Role.ADMIN && currentUser.getRole() != Role.ADMIN) {
-      throw new RuntimeException("Only admins can modify admin users");
+      throw new ForbiddenOperationException(
+          ForbiddenOperationException.ONLY_ADMINS_MODIFY_ADMINS);
     }
 
     // Check if new username conflicts with another user
     userRepository.findByUsername(request.getUsername())
         .ifPresent(existingUser -> {
           if (!existingUser.getId().equals(id)) {
-            throw new RuntimeException(
-                "Username already exists: " + request.getUsername());
+            throw new DuplicateResourceException(
+                String.format(DuplicateResourceException.USERNAME_EXISTS, request.getUsername()));
           }
         });
 
@@ -193,7 +205,8 @@ public class UserService {
    */
   public UserDto resetPassword(Long id) {
     User user = userRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, id)));
 
     String newPassword = passwordGenerator.generate();
     user.setPassword(passwordEncoder.encode(newPassword));
@@ -211,10 +224,13 @@ public class UserService {
    * @throws ResourceNotFoundException  if user does not exist
    * @throws SelfModificationException  if user attempts to delete themselves
    * @throws LastAdminDeletionException if this would delete the last active admin
+   * @throws UserInUseException         if user is still assigned to teams or has
+   *                                    schedules
    */
   public void deleteUser(Long id) {
     User userToDelete = userRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, id)));
 
     // Prevent self-deletion
     User currentUser = getAuthenticatedUser();
@@ -229,6 +245,7 @@ public class UserService {
         throw new LastAdminDeletionException();
       }
     }
+
     // Prevent deletion of users still assigned to teams
     if (teamRepository.existsByUsersId(id)) {
       throw new UserInUseException(UserInUseException.IN_TEAMS);
@@ -238,6 +255,7 @@ public class UserService {
     if (scheduleRepository.existsByUserId(id)) {
       throw new UserInUseException(UserInUseException.HAS_SCHEDULES);
     }
+
     userRepository.deleteById(id);
   }
 }

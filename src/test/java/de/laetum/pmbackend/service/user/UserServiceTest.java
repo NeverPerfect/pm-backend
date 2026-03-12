@@ -14,6 +14,7 @@ import de.laetum.pmbackend.service.user.UserService;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.repository.user.User;
+import de.laetum.pmbackend.exception.DuplicateResourceException;
 import de.laetum.pmbackend.exception.LastAdminDeletionException;
 import de.laetum.pmbackend.exception.SelfModificationException;
 import org.springframework.security.core.Authentication;
@@ -36,6 +37,7 @@ import de.laetum.pmbackend.service.user.UserMapper;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import de.laetum.pmbackend.exception.UserInUseException;
+import de.laetum.pmbackend.exception.DuplicateResourceException;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -222,8 +224,9 @@ class UserServiceTest {
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
     // Act & Assert
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.createUser(request));
-    assertTrue(exception.getMessage().contains("already exists"));
+    DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
+        () -> userService.createUser(request));
+    assertTrue(exception.getMessage().contains("existiert bereits"));
   }
 
   // ==================== updateUser ====================
@@ -305,8 +308,9 @@ class UserServiceTest {
     when(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(otherUser));
 
     // Act & Assert
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.updateUser(1L, request));
-    assertTrue(exception.getMessage().contains("already exists"));
+    DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
+        () -> userService.updateUser(1L, request));
+    assertTrue(exception.getMessage().contains("existiert bereits"));
   }
 
   // ==================== resetPassword ====================
