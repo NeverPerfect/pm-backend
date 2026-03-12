@@ -6,8 +6,10 @@ import de.laetum.pmbackend.controller.project.UpdateProjectRequest;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.team.Team;
 import de.laetum.pmbackend.repository.user.User;
+import de.laetum.pmbackend.exception.ProjectInUseException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.project.ProjectRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import java.util.List;
@@ -28,16 +30,19 @@ public class ProjectService {
   private final TeamRepository teamRepository;
   private final UserRepository userRepository;
   private final ProjectMapper projectMapper;
+  private final ScheduleRepository scheduleRepository;
 
   public ProjectService(
       ProjectRepository projectRepository,
       TeamRepository teamRepository,
       UserRepository userRepository,
-      ProjectMapper projectMapper) {
+      ProjectMapper projectMapper,
+      ScheduleRepository scheduleRepository) {
     this.projectRepository = projectRepository;
     this.teamRepository = teamRepository;
     this.userRepository = userRepository;
     this.projectMapper = projectMapper;
+    this.scheduleRepository = scheduleRepository;
   }
 
   /**
@@ -103,12 +108,19 @@ public class ProjectService {
    *
    * @param id Project ID
    * @throws ResourceNotFoundException if project not found
+   * @throws ProjectInUseException     if project still has schedule entries
    */
   public void deleteProject(Long id) {
     if (!projectRepository.existsById(id)) {
       throw new ResourceNotFoundException(
           String.format(ResourceNotFoundException.PROJECT_NOT_FOUND, id));
     }
+
+    // Prevent deletion of projects with schedule entries
+    if (scheduleRepository.existsByProjectId(id)) {
+      throw new ProjectInUseException(ProjectInUseException.HAS_SCHEDULES);
+    }
+
     projectRepository.deleteById(id);
   }
 

@@ -93,4 +93,25 @@ public class GlobalExceptionHandler {
     ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
     return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
   }
+
+  /**
+   * Handles attempts to delete a team that is still referenced
+   * by other entities (projects, schedules).
+   */
+  @ExceptionHandler(TeamInUseException.class)
+  public ResponseEntity<ErrorResponse> handleTeamInUseException(TeamInUseException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
+  /**
+   * Handles attempts to delete a project that is still referenced
+   * by schedules.
+   */
+  @ExceptionHandler(ProjectInUseException.class)
+  public ResponseEntity<ErrorResponse> handleProjectInUseException(ProjectInUseException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
 }

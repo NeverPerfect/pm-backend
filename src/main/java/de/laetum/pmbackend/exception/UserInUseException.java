@@ -6,8 +6,8 @@ package de.laetum.pmbackend.exception;
  */
 public class UserInUseException extends RuntimeException {
 
-    public static final String IN_TEAMS = "User is still assigned to one or more teams";
-    public static final String HAS_SCHEDULES = "User still has schedule entries";
+    public static final String IN_TEAMS = "Der Benutzer ist noch einem oder mehreren Teams zugewiesen.";
+    public static final String HAS_SCHEDULES = "Der Benutzer hat noch Zeitbuchungen.";
 
     public UserInUseException(String message) {
         super(message);

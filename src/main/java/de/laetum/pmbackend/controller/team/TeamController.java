@@ -1,9 +1,9 @@
-package de.laetum.pmbackend.controller.team; 
+package de.laetum.pmbackend.controller.team;
 
 import de.laetum.pmbackend.controller.team.CreateTeamRequest;
-import de.laetum.pmbackend.controller.team.TeamDto; 
-import de.laetum.pmbackend.controller.team.UpdateTeamRequest; 
-import de.laetum.pmbackend.service.team.TeamService;      
+import de.laetum.pmbackend.controller.team.TeamDto;
+import de.laetum.pmbackend.controller.team.UpdateTeamRequest;
+import de.laetum.pmbackend.service.team.TeamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/teams")
-@Tag(
-    name = "Teamverwaltung",
-    description = "CRUD-Operationen für Teams und Benutzerzuweisung (MANAGER/ADMIN)")
+@Tag(name = "Teamverwaltung", description = "CRUD-Operationen für Teams und Benutzerzuweisung (MANAGER/ADMIN)")
 public class TeamController {
 
   private final TeamService teamService;
@@ -31,8 +29,8 @@ public class TeamController {
 
   @Operation(summary = "Alle Teams abrufen", description = "Gibt eine Liste aller Teams zurück")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @GetMapping
   public ResponseEntity<List<TeamDto>> getAllTeams() {
@@ -41,9 +39,9 @@ public class TeamController {
 
   @Operation(summary = "Team nach ID abrufen", description = "Gibt ein einzelnes Team zurück")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Team gefunden"),
-    @ApiResponse(responseCode = "404", description = "Team nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Team gefunden"),
+      @ApiResponse(responseCode = "404", description = "Team nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @GetMapping("/{id}")
   public ResponseEntity<TeamDto> getTeamById(
@@ -53,9 +51,9 @@ public class TeamController {
 
   @Operation(summary = "Neues Team erstellen", description = "Erstellt ein neues Team")
   @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Team erstellt"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "201", description = "Team erstellt"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PostMapping
   public ResponseEntity<TeamDto> createTeam(@Valid @RequestBody CreateTeamRequest request) {
@@ -65,10 +63,10 @@ public class TeamController {
 
   @Operation(summary = "Team aktualisieren", description = "Aktualisiert ein bestehendes Team")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Team aktualisiert"),
-    @ApiResponse(responseCode = "404", description = "Team nicht gefunden"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Team aktualisiert"),
+      @ApiResponse(responseCode = "404", description = "Team nicht gefunden"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PutMapping("/{id}")
   public ResponseEntity<TeamDto> updateTeam(
@@ -79,10 +77,12 @@ public class TeamController {
 
   @Operation(summary = "Team löschen", description = "Löscht ein Team")
   @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Team gelöscht"),
-    @ApiResponse(responseCode = "404", description = "Team nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "204", description = "Team gelöscht"),
+      @ApiResponse(responseCode = "404", description = "Team nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung"),
+      @ApiResponse(responseCode = "409", description = "Team wird noch referenziert")
   })
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteTeam(
       @Parameter(description = "ID des Teams") @PathVariable Long id) {
@@ -90,13 +90,11 @@ public class TeamController {
     return ResponseEntity.noContent().build();
   }
 
-  @Operation(
-      summary = "Benutzer zu Team hinzufügen",
-      description = "Fügt einen Benutzer einem Team hinzu")
+  @Operation(summary = "Benutzer zu Team hinzufügen", description = "Fügt einen Benutzer einem Team hinzu")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Benutzer hinzugefügt"),
-    @ApiResponse(responseCode = "404", description = "Team oder Benutzer nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Benutzer hinzugefügt"),
+      @ApiResponse(responseCode = "404", description = "Team oder Benutzer nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PostMapping("/{teamId}/users/{userId}")
   public ResponseEntity<TeamDto> addUserToTeam(
@@ -105,13 +103,11 @@ public class TeamController {
     return ResponseEntity.ok(teamService.addUserToTeam(teamId, userId));
   }
 
-  @Operation(
-      summary = "Benutzer aus Team entfernen",
-      description = "Entfernt einen Benutzer aus einem Team")
+  @Operation(summary = "Benutzer aus Team entfernen", description = "Entfernt einen Benutzer aus einem Team")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Benutzer entfernt"),
-    @ApiResponse(responseCode = "404", description = "Team oder Benutzer nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Benutzer entfernt"),
+      @ApiResponse(responseCode = "404", description = "Team oder Benutzer nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @DeleteMapping("/{teamId}/users/{userId}")
   public ResponseEntity<TeamDto> removeUserFromTeam(
@@ -120,10 +116,8 @@ public class TeamController {
     return ResponseEntity.ok(teamService.removeUserFromTeam(teamId, userId));
   }
 
-  @Operation(
-      summary = "Eigene Teams abrufen",
-      description = "Gibt alle Teams zurück, in denen der eingeloggte User Mitglied ist")
-  @ApiResponses({@ApiResponse(responseCode = "200", description = "Teams erfolgreich abgerufen")})
+  @Operation(summary = "Eigene Teams abrufen", description = "Gibt alle Teams zurück, in denen der eingeloggte User Mitglied ist")
+  @ApiResponses({ @ApiResponse(responseCode = "200", description = "Teams erfolgreich abgerufen") })
   @GetMapping("/my")
   public ResponseEntity<List<TeamDto>> getMyTeams(Authentication authentication) {
     String username = authentication.getName();

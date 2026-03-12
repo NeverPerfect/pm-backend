@@ -3,9 +3,12 @@ package de.laetum.pmbackend.service.team;
 import de.laetum.pmbackend.controller.team.CreateTeamRequest;
 import de.laetum.pmbackend.controller.team.TeamDto;
 import de.laetum.pmbackend.controller.team.UpdateTeamRequest;
+import de.laetum.pmbackend.repository.project.ProjectRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
 import de.laetum.pmbackend.repository.team.Team;
 import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
+import de.laetum.pmbackend.exception.TeamInUseException;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import java.util.List;
@@ -24,11 +27,17 @@ public class TeamService {
   private final TeamRepository teamRepository;
   private final UserRepository userRepository;
   private final TeamMapper teamMapper;
+  private final ScheduleRepository scheduleRepository;
+  private final ProjectRepository projectRepository;
 
-  public TeamService(TeamRepository teamRepository, UserRepository userRepository, TeamMapper teamMapper) {
+  public TeamService(TeamRepository teamRepository, UserRepository userRepository,
+      TeamMapper teamMapper, ScheduleRepository scheduleRepository,
+      ProjectRepository projectRepository) {
     this.teamRepository = teamRepository;
     this.userRepository = userRepository;
     this.teamMapper = teamMapper;
+    this.scheduleRepository = scheduleRepository;
+    this.projectRepository = projectRepository;
   }
 
   /**
@@ -93,12 +102,25 @@ public class TeamService {
    *
    * @param id Team ID
    * @throws ResourceNotFoundException if team not found
+   * @throws TeamInUseException        if team is still referenced by schedules or
+   *                                   projects
    */
   public void deleteTeam(Long id) {
     if (!teamRepository.existsById(id)) {
       throw new ResourceNotFoundException(
           String.format(ResourceNotFoundException.TEAM_NOT_FOUND, id));
     }
+
+    // Prevent deletion of teams with schedule entries
+    if (scheduleRepository.existsByTeamId(id)) {
+      throw new TeamInUseException(TeamInUseException.HAS_SCHEDULES);
+    }
+
+    // Prevent deletion of teams still assigned to projects
+    if (projectRepository.existsByTeamsId(id)) {
+      throw new TeamInUseException(TeamInUseException.IN_PROJECTS);
+    }
+
     teamRepository.deleteById(id);
   }
 

@@ -8,9 +8,12 @@ import de.laetum.pmbackend.controller.team.CreateTeamRequest;
 import de.laetum.pmbackend.controller.team.TeamDto;
 import de.laetum.pmbackend.controller.team.UpdateTeamRequest;
 import de.laetum.pmbackend.repository.user.Role;
+import de.laetum.pmbackend.repository.project.ProjectRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
 import de.laetum.pmbackend.repository.team.Team;
 import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
+import de.laetum.pmbackend.exception.TeamInUseException;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.service.team.TeamService;
@@ -42,6 +45,12 @@ class TeamServiceTest {
 
   @Mock
   private TeamMapper teamMapper;
+
+  @Mock
+  private ScheduleRepository scheduleRepository;
+
+  @Mock
+  private ProjectRepository projectRepository;
 
   @InjectMocks
   private TeamService teamService;
@@ -196,6 +205,8 @@ class TeamServiceTest {
   void deleteTeam_WhenTeamExists_DeletesTeam() {
     // Arrange
     when(teamRepository.existsById(1L)).thenReturn(true);
+    when(scheduleRepository.existsByTeamId(1L)).thenReturn(false);
+    when(projectRepository.existsByTeamsId(1L)).thenReturn(false);
 
     // Act
     teamService.deleteTeam(1L);
@@ -213,6 +224,50 @@ class TeamServiceTest {
     // Act & Assert
     assertThrows(ResourceNotFoundException.class, () -> teamService.deleteTeam(99L));
     verify(teamRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteTeam throws TeamInUseException when team has schedules")
+  void deleteTeam_WhenTeamHasSchedules_ThrowsTeamInUseException() {
+    // Arrange
+    when(teamRepository.existsById(1L)).thenReturn(true);
+    when(scheduleRepository.existsByTeamId(1L)).thenReturn(true);
+
+    // Act & Assert
+    TeamInUseException exception = assertThrows(TeamInUseException.class,
+        () -> teamService.deleteTeam(1L));
+    assertEquals(TeamInUseException.HAS_SCHEDULES, exception.getMessage());
+    verify(teamRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteTeam throws TeamInUseException when team is assigned to projects")
+  void deleteTeam_WhenTeamInProjects_ThrowsTeamInUseException() {
+    // Arrange
+    when(teamRepository.existsById(1L)).thenReturn(true);
+    when(scheduleRepository.existsByTeamId(1L)).thenReturn(false);
+    when(projectRepository.existsByTeamsId(1L)).thenReturn(true);
+
+    // Act & Assert
+    TeamInUseException exception = assertThrows(TeamInUseException.class,
+        () -> teamService.deleteTeam(1L));
+    assertEquals(TeamInUseException.IN_PROJECTS, exception.getMessage());
+    verify(teamRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteTeam checks schedules before projects")
+  void deleteTeam_WhenTeamHasSchedulesAndProjects_ThrowsScheduleError() {
+    // Arrange
+    when(teamRepository.existsById(1L)).thenReturn(true);
+    when(scheduleRepository.existsByTeamId(1L)).thenReturn(true);
+
+    // Act & Assert
+    TeamInUseException exception = assertThrows(TeamInUseException.class,
+        () -> teamService.deleteTeam(1L));
+    assertEquals(TeamInUseException.HAS_SCHEDULES, exception.getMessage());
+    // Should not even check projects if schedules exist
+    verify(projectRepository, never()).existsByTeamsId(any());
   }
 
   // ==================== addUserToTeam ====================

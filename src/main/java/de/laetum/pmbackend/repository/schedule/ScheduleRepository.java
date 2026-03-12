@@ -12,4 +12,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
   List<Schedule> findByUserIdOrderByDateDesc(Long userId);
 
   boolean existsByUserId(Long userId);
+
+  boolean existsByTeamId(Long teamId);
+
+  boolean existsByProjectId(Long projectId);
 }

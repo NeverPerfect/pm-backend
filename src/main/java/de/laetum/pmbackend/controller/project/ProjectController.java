@@ -1,9 +1,9 @@
 package de.laetum.pmbackend.controller.project;
 
-import de.laetum.pmbackend.controller.project.CreateProjectRequest; 
-import de.laetum.pmbackend.controller.project.ProjectDto;  
-import de.laetum.pmbackend.controller.project.UpdateProjectRequest; 
-import de.laetum.pmbackend.service.project.ProjectService;  
+import de.laetum.pmbackend.controller.project.CreateProjectRequest;
+import de.laetum.pmbackend.controller.project.ProjectDto;
+import de.laetum.pmbackend.controller.project.UpdateProjectRequest;
+import de.laetum.pmbackend.service.project.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/projects")
-@Tag(
-    name = "Projektverwaltung",
-    description = "CRUD-Operationen für Projekte und Teamzuweisung (MANAGER/ADMIN)")
+@Tag(name = "Projektverwaltung", description = "CRUD-Operationen für Projekte und Teamzuweisung (MANAGER/ADMIN)")
 public class ProjectController {
 
   private final ProjectService projectService;
@@ -29,12 +27,10 @@ public class ProjectController {
     this.projectService = projectService;
   }
 
-  @Operation(
-      summary = "Alle Projekte abrufen",
-      description = "Gibt eine Liste aller Projekte zurück")
+  @Operation(summary = "Alle Projekte abrufen", description = "Gibt eine Liste aller Projekte zurück")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Liste erfolgreich abgerufen"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @GetMapping
   public ResponseEntity<List<ProjectDto>> getAllProjects() {
@@ -43,9 +39,9 @@ public class ProjectController {
 
   @Operation(summary = "Projekt nach ID abrufen", description = "Gibt ein einzelnes Projekt zurück")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Projekt gefunden"),
-    @ApiResponse(responseCode = "404", description = "Projekt nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Projekt gefunden"),
+      @ApiResponse(responseCode = "404", description = "Projekt nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @GetMapping("/{id}")
   public ResponseEntity<ProjectDto> getProjectById(
@@ -55,9 +51,9 @@ public class ProjectController {
 
   @Operation(summary = "Neues Projekt erstellen", description = "Erstellt ein neues Projekt")
   @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Projekt erstellt"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "201", description = "Projekt erstellt"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PostMapping
   public ResponseEntity<ProjectDto> createProject(
@@ -66,14 +62,12 @@ public class ProjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(created);
   }
 
-  @Operation(
-      summary = "Projekt aktualisieren",
-      description = "Aktualisiert ein bestehendes Projekt")
+  @Operation(summary = "Projekt aktualisieren", description = "Aktualisiert ein bestehendes Projekt")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Projekt aktualisiert"),
-    @ApiResponse(responseCode = "404", description = "Projekt nicht gefunden"),
-    @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Projekt aktualisiert"),
+      @ApiResponse(responseCode = "404", description = "Projekt nicht gefunden"),
+      @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PutMapping("/{id}")
   public ResponseEntity<ProjectDto> updateProject(
@@ -84,10 +78,12 @@ public class ProjectController {
 
   @Operation(summary = "Projekt löschen", description = "Löscht ein Projekt")
   @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Projekt gelöscht"),
-    @ApiResponse(responseCode = "404", description = "Projekt nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "204", description = "Projekt gelöscht"),
+      @ApiResponse(responseCode = "404", description = "Projekt nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung"),
+      @ApiResponse(responseCode = "409", description = "Projekt wird noch referenziert")
   })
+
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteProject(
       @Parameter(description = "ID des Projekts") @PathVariable Long id) {
@@ -95,13 +91,11 @@ public class ProjectController {
     return ResponseEntity.noContent().build();
   }
 
-  @Operation(
-      summary = "Team zu Projekt hinzufügen",
-      description = "Weist ein Team einem Projekt zu")
+  @Operation(summary = "Team zu Projekt hinzufügen", description = "Weist ein Team einem Projekt zu")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Team hinzugefügt"),
-    @ApiResponse(responseCode = "404", description = "Projekt oder Team nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Team hinzugefügt"),
+      @ApiResponse(responseCode = "404", description = "Projekt oder Team nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @PostMapping("/{projectId}/teams/{teamId}")
   public ResponseEntity<ProjectDto> addTeamToProject(
@@ -110,13 +104,11 @@ public class ProjectController {
     return ResponseEntity.ok(projectService.addTeamToProject(projectId, teamId));
   }
 
-  @Operation(
-      summary = "Team aus Projekt entfernen",
-      description = "Entfernt ein Team aus einem Projekt")
+  @Operation(summary = "Team aus Projekt entfernen", description = "Entfernt ein Team aus einem Projekt")
   @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Team entfernt"),
-    @ApiResponse(responseCode = "404", description = "Projekt oder Team nicht gefunden"),
-    @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+      @ApiResponse(responseCode = "200", description = "Team entfernt"),
+      @ApiResponse(responseCode = "404", description = "Projekt oder Team nicht gefunden"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
   })
   @DeleteMapping("/{projectId}/teams/{teamId}")
   public ResponseEntity<ProjectDto> removeTeamFromProject(

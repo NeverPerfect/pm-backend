@@ -9,8 +9,10 @@ import de.laetum.pmbackend.controller.project.ProjectDto;
 import de.laetum.pmbackend.controller.project.UpdateProjectRequest;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.team.Team;
+import de.laetum.pmbackend.exception.ProjectInUseException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.project.ProjectRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.service.project.ProjectService;
 import de.laetum.pmbackend.service.project.ProjectMapper;
@@ -43,6 +45,9 @@ class ProjectServiceTest {
 
   @Mock
   private ProjectMapper projectMapper;
+
+  @Mock
+  private ScheduleRepository scheduleRepository;
 
   @InjectMocks
   private ProjectService projectService;
@@ -195,6 +200,7 @@ class ProjectServiceTest {
   void deleteProject_WhenProjectExists_DeletesProject() {
     // Arrange
     when(projectRepository.existsById(1L)).thenReturn(true);
+    when(scheduleRepository.existsByProjectId(1L)).thenReturn(false);
 
     // Act
     projectService.deleteProject(1L);
@@ -211,6 +217,20 @@ class ProjectServiceTest {
 
     // Act & Assert
     assertThrows(ResourceNotFoundException.class, () -> projectService.deleteProject(99L));
+    verify(projectRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteProject throws ProjectInUseException when project has schedules")
+  void deleteProject_WhenProjectHasSchedules_ThrowsProjectInUseException() {
+    // Arrange
+    when(projectRepository.existsById(1L)).thenReturn(true);
+    when(scheduleRepository.existsByProjectId(1L)).thenReturn(true);
+
+    // Act & Assert
+    ProjectInUseException exception = assertThrows(ProjectInUseException.class,
+        () -> projectService.deleteProject(1L));
+    assertEquals(ProjectInUseException.HAS_SCHEDULES, exception.getMessage());
     verify(projectRepository, never()).deleteById(any());
   }
 
