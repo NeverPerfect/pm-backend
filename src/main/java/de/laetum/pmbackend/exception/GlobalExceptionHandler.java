@@ -2,6 +2,7 @@ package de.laetum.pmbackend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -114,4 +115,18 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
   }
 
+  /**
+   * Handles bean validation failures from @Valid annotations on request DTOs.
+   * Returns the first validation error message.
+   */
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidationException(
+      MethodArgumentNotValidException ex) {
+    String message = ex.getBindingResult().getFieldErrors().stream()
+        .findFirst()
+        .map(error -> error.getDefaultMessage())
+        .orElse("Ungültige Anfrage.");
+    ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), message);
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
 }
