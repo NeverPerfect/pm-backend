@@ -129,4 +129,15 @@ public class GlobalExceptionHandler {
     ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), message);
     return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
   }
+
+  /**
+   * Handles attempts to delete a category that is still referenced
+   * by schedules.
+   */
+  @ExceptionHandler(CategoryInUseException.class)
+  public ResponseEntity<ErrorResponse> handleCategoryInUseException(CategoryInUseException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
 }

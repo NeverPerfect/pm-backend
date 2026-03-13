@@ -117,10 +117,16 @@ public class ProjectController {
     return ResponseEntity.ok(projectService.removeTeamFromProject(projectId, teamId));
   }
 
+  @Operation(summary = "Eigene Projekte abrufen", description = "Gibt alle aktiven Projekte zurück, in denen der eingeloggte User über Teams beteiligt ist")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Projekte erfolgreich abgerufen")
+  })
+
   @GetMapping("/my")
   public ResponseEntity<List<ProjectDto>> getMyProjects(Authentication authentication) {
     String username = authentication.getName();
     List<ProjectDto> projects = projectService.getProjectsByUsername(username);
     return ResponseEntity.ok(projects);
   }
+
 }

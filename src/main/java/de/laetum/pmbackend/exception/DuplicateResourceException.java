@@ -9,6 +9,8 @@ public class DuplicateResourceException extends RuntimeException {
 
     public static final String USERNAME_EXISTS = "Benutzername existiert bereits: %s";
 
+    public static final String CATEGORY_NAME_EXISTS = "Eine Kategorie mit dem Namen '%s' existiert bereits.";
+
     public DuplicateResourceException(String message) {
         super(message);
     }

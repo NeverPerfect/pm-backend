@@ -12,6 +12,7 @@ public class ResourceNotFoundException extends RuntimeException {
   public static final String TEAM_NOT_FOUND = "Team nicht gefunden mit ID: %d";
   public static final String PROJECT_NOT_FOUND = "Projekt nicht gefunden mit ID: %d";
   public static final String SCHEDULE_NOT_FOUND = "Zeitbuchung nicht gefunden mit ID: %d";
+  public static final String CATEGORY_NOT_FOUND = "Kategorie mit ID %d nicht gefunden.";
 
   // Format pattern for resource lookups by username
   public static final String USER_NOT_FOUND_BY_USERNAME = "Benutzer nicht gefunden: %s";
