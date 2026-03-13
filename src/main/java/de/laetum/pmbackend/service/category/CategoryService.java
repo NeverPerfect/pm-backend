@@ -7,6 +7,9 @@ import de.laetum.pmbackend.exception.DuplicateResourceException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.category.Category;
 import de.laetum.pmbackend.repository.category.CategoryRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+import de.laetum.pmbackend.exception.CategoryInUseException;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -22,10 +25,13 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final ScheduleRepository scheduleRepository;
 
-    public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
+    public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper,
+            ScheduleRepository scheduleRepository) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
+        this.scheduleRepository = scheduleRepository;
     }
 
     /**
@@ -117,6 +123,12 @@ public class CategoryService {
             throw new ResourceNotFoundException(
                     String.format(ResourceNotFoundException.CATEGORY_NOT_FOUND, id));
         }
+
+        // Prevent deletion of categories with schedule entries
+        if (scheduleRepository.existsByCategoryId(id)) {
+            throw new CategoryInUseException(CategoryInUseException.HAS_SCHEDULES);
+        }
+
         categoryRepository.deleteById(id);
     }
 }

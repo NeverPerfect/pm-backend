@@ -27,4 +27,7 @@ public class UpdateScheduleRequest {
 
     @NotNull(message = "Team ist erforderlich.")
     private Long teamId;
+
+    @NotNull(message = "Kategorie ist erforderlich.")
+    private Long categoryId;
 }

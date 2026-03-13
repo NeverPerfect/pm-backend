@@ -9,6 +9,8 @@ import de.laetum.pmbackend.controller.schedule.ScheduleDto;
 import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
 import de.laetum.pmbackend.exception.ForbiddenOperationException;
 import de.laetum.pmbackend.exception.ScheduleValidationException;
+import de.laetum.pmbackend.repository.category.Category;
+import de.laetum.pmbackend.repository.category.CategoryRepository;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.repository.schedule.Schedule;
@@ -47,6 +49,8 @@ class ScheduleServiceTest {
   private TeamRepository teamRepository;
   @Mock
   private ScheduleMapper scheduleMapper;
+  @Mock
+  private CategoryRepository categoryRepository;
 
   @InjectMocks
   private ScheduleService scheduleService;
@@ -55,6 +59,7 @@ class ScheduleServiceTest {
   private Team testTeam;
   private Project testProject;
   private Schedule testSchedule;
+  private Category testCategory;
 
   @BeforeEach
   void setUp() {
@@ -74,6 +79,9 @@ class ScheduleServiceTest {
     testProject.setId(1L);
     testProject.addTeam(testTeam);
 
+    testCategory = new Category("Entwicklung", "Softwareentwicklung", "#4CAF50");
+    testCategory.setId(1L);
+
     testSchedule = new Schedule();
     testSchedule.setId(1L);
     testSchedule.setDate(LocalDate.of(2026, 1, 20));
@@ -82,6 +90,7 @@ class ScheduleServiceTest {
     testSchedule.setUser(testUser);
     testSchedule.setTeam(testTeam);
     testSchedule.setProject(testProject);
+    testSchedule.setCategory(testCategory);
 
     when(scheduleMapper.map(any(Schedule.class))).thenAnswer(invocation -> {
       Schedule s = invocation.getArgument(0);
@@ -96,6 +105,9 @@ class ScheduleServiceTest {
       dto.setProjectName(s.getProject().getName());
       dto.setTeamId(s.getTeam().getId());
       dto.setTeamName(s.getTeam().getName());
+      dto.setCategoryId(s.getCategory().getId());
+      dto.setCategoryName(s.getCategory().getName());
+      dto.setCategoryColor(s.getCategory().getColor());
       return dto;
     });
   }
@@ -167,6 +179,7 @@ class ScheduleServiceTest {
     request.setDescription("New work");
     request.setTeamId(1L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
@@ -178,6 +191,7 @@ class ScheduleServiceTest {
               saved.setId(2L);
               return saved;
             });
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
 
     // Act
     ScheduleDto result = scheduleService.createSchedule(1L, request);
@@ -203,6 +217,7 @@ class ScheduleServiceTest {
     request.setDescription("Work");
     request.setTeamId(1L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(userRepository.findById(2L)).thenReturn(Optional.of(otherUser));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
@@ -228,6 +243,7 @@ class ScheduleServiceTest {
     request.setDescription("Work");
     request.setTeamId(1L);
     request.setProjectId(2L);
+    request.setCategoryId(1L);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
@@ -253,6 +269,7 @@ class ScheduleServiceTest {
     request.setDescription("Work");
     request.setTeamId(2L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(teamRepository.findById(2L)).thenReturn(Optional.of(otherTeam));
@@ -276,6 +293,7 @@ class ScheduleServiceTest {
     request.setDescription("Work");
     request.setTeamId(1L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
@@ -299,11 +317,13 @@ class ScheduleServiceTest {
     request.setDescription("Updated work");
     request.setTeamId(1L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
     when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
     when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
     when(scheduleRepository.save(any(Schedule.class))).thenReturn(testSchedule);
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
 
     // Act
     ScheduleDto result = scheduleService.updateSchedule(1L, 1L, request);
@@ -323,6 +343,7 @@ class ScheduleServiceTest {
     request.setDescription("Updated");
     request.setTeamId(1L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 
@@ -356,6 +377,7 @@ class ScheduleServiceTest {
     request.setDescription("Updated");
     request.setTeamId(1L);
     request.setProjectId(1L);
+    request.setCategoryId(1L);
 
     when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
 

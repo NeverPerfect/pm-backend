@@ -5,6 +5,8 @@ import de.laetum.pmbackend.controller.schedule.ScheduleDto;
 import de.laetum.pmbackend.controller.schedule.UpdateScheduleRequest;
 import de.laetum.pmbackend.exception.ForbiddenOperationException;
 import de.laetum.pmbackend.exception.ScheduleValidationException;
+import de.laetum.pmbackend.repository.category.Category;
+import de.laetum.pmbackend.repository.category.CategoryRepository;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.schedule.Schedule;
 import de.laetum.pmbackend.repository.team.Team;
@@ -21,8 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service for schedule management operations. Handles CRUD operations for time
- * bookings
- * with validation of user-team-project relationships.
+ * bookings with validation of user-team-project-category relationships.
  */
 @Service
 @Transactional
@@ -32,6 +33,7 @@ public class ScheduleService {
   private final UserRepository userRepository;
   private final ProjectRepository projectRepository;
   private final TeamRepository teamRepository;
+  private final CategoryRepository categoryRepository;
   private final ScheduleMapper scheduleMapper;
 
   public ScheduleService(
@@ -39,11 +41,13 @@ public class ScheduleService {
       UserRepository userRepository,
       ProjectRepository projectRepository,
       TeamRepository teamRepository,
+      CategoryRepository categoryRepository,
       ScheduleMapper scheduleMapper) {
     this.scheduleRepository = scheduleRepository;
     this.userRepository = userRepository;
     this.projectRepository = projectRepository;
     this.teamRepository = teamRepository;
+    this.categoryRepository = categoryRepository;
     this.scheduleMapper = scheduleMapper;
   }
 
@@ -82,13 +86,14 @@ public class ScheduleService {
 
   /**
    * Create a new schedule entry. Validates that the user is active, belongs to
-   * the team,
-   * the project is active, and the team is assigned to the project.
+   * the team, the project is active, the team is assigned to the project,
+   * and the category exists.
    *
    * @param userId  User ID
    * @param request Schedule data
    * @return Created schedule as DTO
-   * @throws ResourceNotFoundException   if user, team or project not found
+   * @throws ResourceNotFoundException   if user, team, project or category not
+   *                                     found
    * @throws ScheduleValidationException if validation fails
    */
   public ScheduleDto createSchedule(Long userId, CreateScheduleRequest request) {
@@ -127,6 +132,12 @@ public class ScheduleService {
       throw new ScheduleValidationException(ScheduleValidationException.TEAM_NOT_IN_PROJECT);
     }
 
+    // Load the selected category
+    Category category = categoryRepository
+        .findById(request.getCategoryId())
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.CATEGORY_NOT_FOUND, request.getCategoryId())));
+
     Schedule schedule = new Schedule();
     schedule.setDate(request.getDate());
     schedule.setHours(request.getHours());
@@ -134,6 +145,7 @@ public class ScheduleService {
     schedule.setUser(user);
     schedule.setProject(project);
     schedule.setTeam(team);
+    schedule.setCategory(category);
 
     Schedule saved = scheduleRepository.save(schedule);
     return scheduleMapper.map(saved);
@@ -147,7 +159,8 @@ public class ScheduleService {
    * @param userId  User ID (must match schedule owner)
    * @param request Updated schedule data
    * @return Updated schedule as DTO
-   * @throws ResourceNotFoundException   if schedule, team or project not found
+   * @throws ResourceNotFoundException   if schedule, team, project or category
+   *                                     not found
    * @throws ForbiddenOperationException if user doesn't own the schedule
    * @throws ScheduleValidationException if validation fails
    */
@@ -192,11 +205,18 @@ public class ScheduleService {
       throw new ScheduleValidationException(ScheduleValidationException.TEAM_NOT_IN_PROJECT);
     }
 
+    // Load the selected category
+    Category category = categoryRepository
+        .findById(request.getCategoryId())
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.CATEGORY_NOT_FOUND, request.getCategoryId())));
+
     schedule.setDate(request.getDate());
     schedule.setHours(request.getHours());
     schedule.setDescription(request.getDescription());
     schedule.setProject(project);
     schedule.setTeam(team);
+    schedule.setCategory(category);
 
     Schedule saved = scheduleRepository.save(schedule);
     return scheduleMapper.map(saved);

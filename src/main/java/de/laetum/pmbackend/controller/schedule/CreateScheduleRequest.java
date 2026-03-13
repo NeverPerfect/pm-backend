@@ -27,4 +27,7 @@ public class CreateScheduleRequest {
 
     @NotNull(message = "Team ist erforderlich.")
     private Long teamId;
+
+    @NotNull(message = "Kategorie ist erforderlich.")
+    private Long categoryId;
 }

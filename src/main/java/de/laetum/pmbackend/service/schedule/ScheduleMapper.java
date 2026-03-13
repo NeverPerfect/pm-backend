@@ -1,7 +1,7 @@
 package de.laetum.pmbackend.service.schedule;
 
 import de.laetum.pmbackend.controller.schedule.ScheduleDto;
-import de.laetum.pmbackend.repository.schedule.Schedule; 
+import de.laetum.pmbackend.repository.schedule.Schedule;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,6 +29,9 @@ public class ScheduleMapper {
         dto.setProjectName(schedule.getProject().getName());
         dto.setTeamId(schedule.getTeam().getId());
         dto.setTeamName(schedule.getTeam().getName());
+        dto.setCategoryId(schedule.getCategory().getId());
+        dto.setCategoryName(schedule.getCategory().getName());
+        dto.setCategoryColor(schedule.getCategory().getColor());
         return dto;
     }
 }

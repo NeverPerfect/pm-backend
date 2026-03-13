@@ -3,6 +3,8 @@ package de.laetum.pmbackend.repository.schedule;
 import de.laetum.pmbackend.repository.project.Project;
 import de.laetum.pmbackend.repository.team.Team;
 import de.laetum.pmbackend.repository.user.User;
+import de.laetum.pmbackend.repository.category.Category;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,4 +41,8 @@ public class Schedule {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "team_id", nullable = false)
   private Team team;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "category_id", nullable = false)
+  private Category category;
 }

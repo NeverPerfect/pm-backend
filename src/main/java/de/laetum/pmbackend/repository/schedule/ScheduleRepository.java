@@ -16,4 +16,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
   boolean existsByTeamId(Long teamId);
 
   boolean existsByProjectId(Long projectId);
+
+  boolean existsByCategoryId(Long categoryId);
 }

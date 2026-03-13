@@ -19,4 +19,7 @@ public class ScheduleDto {
     private String projectName;
     private Long teamId;
     private String teamName;
+    private Long categoryId;
+    private String categoryName;
+    private String categoryColor;
 }

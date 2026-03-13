@@ -7,10 +7,13 @@ import static org.mockito.Mockito.*;
 import de.laetum.pmbackend.controller.category.CategoryDto;
 import de.laetum.pmbackend.controller.category.CreateCategoryRequest;
 import de.laetum.pmbackend.controller.category.UpdateCategoryRequest;
+import de.laetum.pmbackend.exception.CategoryInUseException;
 import de.laetum.pmbackend.exception.DuplicateResourceException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.category.Category;
 import de.laetum.pmbackend.repository.category.CategoryRepository;
+import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +36,9 @@ class CategoryServiceTest {
 
     @Mock
     private CategoryMapper categoryMapper;
+
+    @Mock
+    private ScheduleRepository scheduleRepository;
 
     @InjectMocks
     private CategoryService categoryService;
@@ -193,6 +199,7 @@ class CategoryServiceTest {
     @DisplayName("deleteCategory deletes category successfully")
     void deleteCategory_WhenExists_DeletesCategory() {
         when(categoryRepository.existsById(1L)).thenReturn(true);
+        when(scheduleRepository.existsByCategoryId(1L)).thenReturn(false);
 
         categoryService.deleteCategory(1L);
 
@@ -205,6 +212,18 @@ class CategoryServiceTest {
         when(categoryRepository.existsById(99L)).thenReturn(false);
 
         assertThrows(ResourceNotFoundException.class, () -> categoryService.deleteCategory(99L));
+        verify(categoryRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("deleteCategory throws CategoryInUseException when category has schedules")
+    void deleteCategory_WhenHasSchedules_ThrowsCategoryInUseException() {
+        when(categoryRepository.existsById(1L)).thenReturn(true);
+        when(scheduleRepository.existsByCategoryId(1L)).thenReturn(true);
+
+        CategoryInUseException exception = assertThrows(CategoryInUseException.class,
+                () -> categoryService.deleteCategory(1L));
+        assertEquals(CategoryInUseException.HAS_SCHEDULES, exception.getMessage());
         verify(categoryRepository, never()).deleteById(any());
     }
 }

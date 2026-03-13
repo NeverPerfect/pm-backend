@@ -82,8 +82,10 @@ public class CategoryController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Kategorie gelöscht"),
             @ApiResponse(responseCode = "404", description = "Kategorie nicht gefunden"),
-            @ApiResponse(responseCode = "403", description = "Keine Berechtigung")
+            @ApiResponse(responseCode = "403", description = "Keine Berechtigung"),
+            @ApiResponse(responseCode = "409", description = "Kategorie wird noch referenziert")
     })
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(
             @Parameter(description = "ID der Kategorie") @PathVariable Long id) {
