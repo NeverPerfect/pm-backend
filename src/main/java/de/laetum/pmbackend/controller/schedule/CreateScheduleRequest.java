@@ -1,9 +1,8 @@
 package de.laetum.pmbackend.controller.schedule;
 
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,10 +14,11 @@ public class CreateScheduleRequest {
     @NotNull(message = "Datum ist erforderlich.")
     private LocalDate date;
 
-    @NotNull(message = "Stunden sind erforderlich.")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Stunden dürfen nicht negativ sein.")
-    @DecimalMax(value = "24.0", inclusive = true, message = "Stunden dürfen 24 nicht überschreiten.")
-    private Double hours;
+    @NotNull(message = "Startzeit ist erforderlich.")
+    private LocalTime startTime;
+
+    @NotNull(message = "Endzeit ist erforderlich.")
+    private LocalTime endTime;
 
     private String description;
 

@@ -21,6 +21,8 @@ public class ScheduleMapper {
         ScheduleDto dto = new ScheduleDto();
         dto.setId(schedule.getId());
         dto.setDate(schedule.getDate());
+        dto.setStartTime(schedule.getStartTime());
+        dto.setEndTime(schedule.getEndTime());
         dto.setHours(schedule.getHours());
         dto.setDescription(schedule.getDescription());
         dto.setUserId(schedule.getUser().getId());

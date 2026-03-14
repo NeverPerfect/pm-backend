@@ -22,6 +22,7 @@ import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -85,18 +86,22 @@ class ScheduleServiceTest {
     testSchedule = new Schedule();
     testSchedule.setId(1L);
     testSchedule.setDate(LocalDate.of(2026, 1, 20));
-    testSchedule.setHours(8.0);
+    testSchedule.setStartTime(LocalTime.of(9, 0));
+    testSchedule.setEndTime(LocalTime.of(17, 0));
     testSchedule.setDescription("Development work");
     testSchedule.setUser(testUser);
     testSchedule.setTeam(testTeam);
     testSchedule.setProject(testProject);
     testSchedule.setCategory(testCategory);
+    testSchedule.setHours(8.0);
 
     when(scheduleMapper.map(any(Schedule.class))).thenAnswer(invocation -> {
       Schedule s = invocation.getArgument(0);
       ScheduleDto dto = new ScheduleDto();
       dto.setId(s.getId());
       dto.setDate(s.getDate());
+      dto.setStartTime(s.getStartTime());
+      dto.setEndTime(s.getEndTime());
       dto.setHours(s.getHours());
       dto.setDescription(s.getDescription());
       dto.setUserId(s.getUser().getId());
@@ -175,7 +180,8 @@ class ScheduleServiceTest {
     // Arrange
     CreateScheduleRequest request = new CreateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 21));
-    request.setHours(6.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("New work");
     request.setTeamId(1L);
     request.setProjectId(1L);
@@ -213,7 +219,8 @@ class ScheduleServiceTest {
 
     CreateScheduleRequest request = new CreateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 21));
-    request.setHours(6.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Work");
     request.setTeamId(1L);
     request.setProjectId(1L);
@@ -239,7 +246,8 @@ class ScheduleServiceTest {
 
     CreateScheduleRequest request = new CreateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 21));
-    request.setHours(6.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Work");
     request.setTeamId(1L);
     request.setProjectId(2L);
@@ -265,7 +273,8 @@ class ScheduleServiceTest {
 
     CreateScheduleRequest request = new CreateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 21));
-    request.setHours(6.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Work");
     request.setTeamId(2L);
     request.setProjectId(1L);
@@ -289,7 +298,8 @@ class ScheduleServiceTest {
 
     CreateScheduleRequest request = new CreateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 21));
-    request.setHours(6.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Work");
     request.setTeamId(1L);
     request.setProjectId(1L);
@@ -313,7 +323,8 @@ class ScheduleServiceTest {
     // Arrange
     UpdateScheduleRequest request = new UpdateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 22));
-    request.setHours(7.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Updated work");
     request.setTeamId(1L);
     request.setProjectId(1L);
@@ -339,7 +350,8 @@ class ScheduleServiceTest {
     // Arrange
     UpdateScheduleRequest request = new UpdateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 22));
-    request.setHours(7.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Updated");
     request.setTeamId(1L);
     request.setProjectId(1L);
@@ -373,7 +385,8 @@ class ScheduleServiceTest {
 
     UpdateScheduleRequest request = new UpdateScheduleRequest();
     request.setDate(LocalDate.of(2026, 1, 22));
-    request.setHours(7.0);
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(15, 0));
     request.setDescription("Updated");
     request.setTeamId(1L);
     request.setProjectId(1L);
@@ -425,5 +438,82 @@ class ScheduleServiceTest {
 
     // Act & Assert
     assertThrows(ResourceNotFoundException.class, () -> scheduleService.deleteSchedule(99L, 1L));
+  }
+
+  @Test
+  @DisplayName("createSchedule calculates hours from start and end time")
+  void createSchedule_CalculatesHoursFromTimes() {
+    // Arrange
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 21));
+    request.setStartTime(LocalTime.of(9, 15));
+    request.setEndTime(LocalTime.of(17, 45));
+    request.setDescription("Precise timing");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(scheduleRepository.save(any(Schedule.class))).thenAnswer(inv -> {
+      Schedule saved = inv.getArgument(0);
+      saved.setId(2L);
+      return saved;
+    });
+    // Act
+    ScheduleDto result = scheduleService.createSchedule(1L, request);
+    // Assert
+    assertEquals(8.5, result.getHours());
+  }
+
+  @Test
+  @DisplayName("createSchedule supports overnight shifts")
+  void createSchedule_OvernightShift_CalculatesCorrectly() {
+    // Arrange
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 21));
+    request.setStartTime(LocalTime.of(22, 0));
+    request.setEndTime(LocalTime.of(2, 0));
+    request.setDescription("Night shift");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(scheduleRepository.save(any(Schedule.class))).thenAnswer(inv -> {
+      Schedule saved = inv.getArgument(0);
+      saved.setId(2L);
+      return saved;
+    });
+    // Act
+    ScheduleDto result = scheduleService.createSchedule(1L, request);
+    // Assert
+    assertEquals(4.0, result.getHours());
+  }
+
+  @Test
+  @DisplayName("createSchedule throws when start equals end")
+  void createSchedule_StartEqualsEnd_ThrowsException() {
+    // Arrange
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 21));
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(9, 0));
+    request.setDescription("Invalid");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    // Act & Assert
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
+        () -> scheduleService.createSchedule(1L, request));
+    assertEquals(ScheduleValidationException.START_EQUALS_END, exception.getMessage());
   }
 }

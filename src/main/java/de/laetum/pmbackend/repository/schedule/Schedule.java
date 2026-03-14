@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -45,4 +46,10 @@ public class Schedule {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "category_id", nullable = false)
   private Category category;
+
+  @Column(nullable = false)
+  private LocalTime startTime;
+
+  @Column(nullable = false)
+  private LocalTime endTime;
 }

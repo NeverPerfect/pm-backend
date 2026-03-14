@@ -1,6 +1,7 @@
 package de.laetum.pmbackend.controller.schedule;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class ScheduleDto {
     private Long id;
     private LocalDate date;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private Double hours;
     private String description;
     private Long userId;

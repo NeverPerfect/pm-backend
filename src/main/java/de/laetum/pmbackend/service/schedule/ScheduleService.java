@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.Duration;
+import java.time.LocalTime;
 
 /**
  * Service for schedule management operations. Handles CRUD operations for time
@@ -138,9 +140,13 @@ public class ScheduleService {
         .orElseThrow(() -> new ResourceNotFoundException(
             String.format(ResourceNotFoundException.CATEGORY_NOT_FOUND, request.getCategoryId())));
 
+    double hours = calculateHours(request.getStartTime(), request.getEndTime());
+
     Schedule schedule = new Schedule();
     schedule.setDate(request.getDate());
-    schedule.setHours(request.getHours());
+    schedule.setStartTime(request.getStartTime());
+    schedule.setEndTime(request.getEndTime());
+    schedule.setHours(hours);
     schedule.setDescription(request.getDescription());
     schedule.setUser(user);
     schedule.setProject(project);
@@ -211,8 +217,12 @@ public class ScheduleService {
         .orElseThrow(() -> new ResourceNotFoundException(
             String.format(ResourceNotFoundException.CATEGORY_NOT_FOUND, request.getCategoryId())));
 
+    double hours = calculateHours(request.getStartTime(), request.getEndTime());
+
     schedule.setDate(request.getDate());
-    schedule.setHours(request.getHours());
+    schedule.setStartTime(request.getStartTime());
+    schedule.setEndTime(request.getEndTime());
+    schedule.setHours(hours);
     schedule.setDescription(request.getDescription());
     schedule.setProject(project);
     schedule.setTeam(team);
@@ -242,4 +252,39 @@ public class ScheduleService {
 
     scheduleRepository.delete(schedule);
   }
+
+  /**
+   * Calculates the duration in hours between start and end time.
+   * Supports overnight shifts (e.g. 22:00-02:00 = 4h).
+   * Validates that start != end and duration <= 24h.
+   *
+   * @param startTime shift start
+   * @param endTime   shift end
+   * @return duration in hours as double, rounded to two decimal places
+   * @throws ScheduleValidationException if times are equal or duration exceeds
+   *                                     24h
+   */
+  private double calculateHours(LocalTime startTime, LocalTime endTime) {
+    if (startTime.equals(endTime)) {
+      throw new ScheduleValidationException(ScheduleValidationException.START_EQUALS_END);
+    }
+
+    long minutes;
+    if (endTime.isAfter(startTime)) {
+      // Normal: e.g. 09:00 - 17:00
+      minutes = Duration.between(startTime, endTime).toMinutes();
+    } else {
+      // Overnight: e.g. 22:00 - 02:00 → total minutes in a day minus the gap
+      minutes = 1440 + Duration.between(startTime, endTime).toMinutes();
+    }
+
+    double hours = Math.round(minutes / 60.0 * 100.0) / 100.0;
+
+    if (hours > 24.0) {
+      throw new ScheduleValidationException(ScheduleValidationException.DURATION_EXCEEDS_24H);
+    }
+
+    return hours;
+  }
+
 }
