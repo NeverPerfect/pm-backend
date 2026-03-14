@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
@@ -109,6 +110,11 @@ public class ScheduleService {
       throw new ScheduleValidationException(ScheduleValidationException.USER_INACTIVE_CREATE);
     }
 
+    // Prevent bookings for future dates
+    if (request.getDate().isAfter(LocalDate.now())) {
+      throw new ScheduleValidationException(ScheduleValidationException.DATE_IN_FUTURE);
+    }
+
     Team team = teamRepository
         .findById(request.getTeamId())
         .orElseThrow(() -> new ResourceNotFoundException(
@@ -186,6 +192,11 @@ public class ScheduleService {
     // Prevent time bookings for inactive users
     if (!user.isActive()) {
       throw new ScheduleValidationException(ScheduleValidationException.USER_INACTIVE_UPDATE);
+    }
+
+    // Prevent bookings for future dates
+    if (request.getDate().isAfter(LocalDate.now())) {
+      throw new ScheduleValidationException(ScheduleValidationException.DATE_IN_FUTURE);
     }
 
     Team team = teamRepository

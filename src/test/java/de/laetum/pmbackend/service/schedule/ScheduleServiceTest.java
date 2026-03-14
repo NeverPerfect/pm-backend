@@ -516,4 +516,44 @@ class ScheduleServiceTest {
         () -> scheduleService.createSchedule(1L, request));
     assertEquals(ScheduleValidationException.START_EQUALS_END, exception.getMessage());
   }
+
+  @Test
+  @DisplayName("createSchedule throws when date is in the future")
+  void createSchedule_FutureDate_ThrowsException() {
+    // Arrange
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.now().plusDays(1));
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(17, 0));
+    request.setDescription("Future");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    // Act & Assert
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
+        () -> scheduleService.createSchedule(1L, request));
+    assertEquals(ScheduleValidationException.DATE_IN_FUTURE, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("updateSchedule throws when date is in the future")
+  void updateSchedule_FutureDate_ThrowsException() {
+    // Arrange
+    UpdateScheduleRequest request = new UpdateScheduleRequest();
+    request.setDate(LocalDate.now().plusDays(1));
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(17, 0));
+    request.setDescription("Future");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+    when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
+    // Act & Assert
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
+        () -> scheduleService.updateSchedule(1L, 1L, request));
+    assertEquals(ScheduleValidationException.DATE_IN_FUTURE, exception.getMessage());
+  }
 }
