@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import de.laetum.pmbackend.exception.PasswordPolicyException;
 
 /**
  * Centralized exception handling for all REST controllers.
@@ -91,6 +92,16 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ScheduleValidationException.class)
   public ResponseEntity<ErrorResponse> handleScheduleValidationException(
       ScheduleValidationException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  /**
+   * Handles password policy violations when a manually provided password
+   * does not meet the required complexity rules.
+   */
+  @ExceptionHandler(PasswordPolicyException.class)
+  public ResponseEntity<ErrorResponse> handlePasswordPolicyException(PasswordPolicyException ex) {
     ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
     return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
   }

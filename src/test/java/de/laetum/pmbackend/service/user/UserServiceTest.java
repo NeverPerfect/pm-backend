@@ -16,6 +16,7 @@ import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.DuplicateResourceException;
 import de.laetum.pmbackend.exception.LastAdminDeletionException;
+import de.laetum.pmbackend.exception.PasswordPolicyException;
 import de.laetum.pmbackend.exception.SelfModificationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -229,6 +230,149 @@ class UserServiceTest {
     assertTrue(exception.getMessage().contains("existiert bereits"));
   }
 
+  // ==================== Password Policy ====================
+
+  @Test
+  @DisplayName("createUser throws exception when manual password is too short")
+  void createUser_WhenPasswordTooShort_ThrowsException() {
+    // Arrange
+    CreateUserRequest request = new CreateUserRequest();
+    request.setUsername("newuser");
+    request.setPassword("Short1!");
+    request.setFirstName("New");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+
+    // Act & Assert
+    PasswordPolicyException exception = assertThrows(PasswordPolicyException.class,
+        () -> userService.createUser(request));
+    assertEquals(PasswordPolicyException.TOO_SHORT, exception.getMessage());
+    verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("createUser throws exception when password missing uppercase")
+  void createUser_WhenPasswordMissingUppercase_ThrowsException() {
+    // Arrange
+    CreateUserRequest request = new CreateUserRequest();
+    request.setUsername("newuser");
+    request.setPassword("lowercase1!");
+    request.setFirstName("New");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+
+    // Act & Assert
+    PasswordPolicyException exception = assertThrows(PasswordPolicyException.class,
+        () -> userService.createUser(request));
+    assertEquals(PasswordPolicyException.MISSING_UPPERCASE, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("createUser throws exception when password missing special character")
+  void createUser_WhenPasswordMissingSpecial_ThrowsException() {
+    // Arrange
+    CreateUserRequest request = new CreateUserRequest();
+    request.setUsername("newuser");
+    request.setPassword("NoSpecial1Aa");
+    request.setFirstName("New");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+
+    // Act & Assert
+    PasswordPolicyException exception = assertThrows(PasswordPolicyException.class,
+        () -> userService.createUser(request));
+    assertEquals(PasswordPolicyException.MISSING_SPECIAL, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("createUser accepts valid manual password")
+  void createUser_WhenPasswordValid_Succeeds() {
+    // Arrange
+    CreateUserRequest request = new CreateUserRequest();
+    request.setUsername("newuser");
+    request.setPassword("ValidPass1!");
+    request.setFirstName("New");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+    when(passwordEncoder.encode("ValidPass1!")).thenReturn("encoded");
+    when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+      User saved = invocation.getArgument(0);
+      saved.setId(2L);
+      return saved;
+    });
+
+    // Act
+    UserDto result = userService.createUser(request);
+
+    // Assert
+    assertNotNull(result);
+    assertNull(result.getGeneratedPassword());
+    verify(userRepository).save(any(User.class));
+  }
+
+  @Test
+  @DisplayName("createUser skips validation for auto-generated passwords")
+  void createUser_WhenNoPassword_SkipsValidation() {
+    // Arrange
+    CreateUserRequest request = new CreateUserRequest();
+    request.setUsername("newuser");
+    request.setPassword(null);
+    request.setFirstName("New");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+    when(passwordGenerator.generate()).thenReturn("GeneratedPass123!");
+    when(passwordEncoder.encode("GeneratedPass123!")).thenReturn("encoded");
+    when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+      User saved = invocation.getArgument(0);
+      saved.setId(2L);
+      return saved;
+    });
+
+    // Act
+    UserDto result = userService.createUser(request);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals("GeneratedPass123!", result.getGeneratedPassword());
+  }
+
+  @Test
+  @DisplayName("updateUser throws exception when new password violates policy")
+  void updateUser_WhenNewPasswordInvalid_ThrowsException() {
+    // Arrange
+    UpdateUserRequest request = new UpdateUserRequest();
+    request.setUsername("testuser");
+    request.setFirstName("Test");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+    request.setPassword("weak");
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+
+    // Act & Assert
+    PasswordPolicyException exception = assertThrows(PasswordPolicyException.class,
+        () -> userService.updateUser(1L, request));
+    assertEquals(PasswordPolicyException.TOO_SHORT, exception.getMessage());
+    verify(userRepository, never()).save(any());
+  }
+
   // ==================== updateUser ====================
 
   @Test
@@ -264,18 +408,18 @@ class UserServiceTest {
     request.setLastName("User");
     request.setRole(Role.EMPLOYEE);
     request.setActive(true);
-    request.setPassword("newPassword");
+    request.setPassword("NewPassword1!");
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    when(passwordEncoder.encode("newPassword")).thenReturn("newEncodedPassword");
+    when(passwordEncoder.encode("NewPassword1!")).thenReturn("newEncodedPassword");
     when(userRepository.save(any(User.class))).thenReturn(testUser);
 
     // Act
     userService.updateUser(1L, request);
 
     // Assert
-    verify(passwordEncoder).encode("newPassword");
+    verify(passwordEncoder).encode("NewPassword1!");
   }
 
   @Test

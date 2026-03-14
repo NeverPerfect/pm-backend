@@ -36,7 +36,7 @@ public class PasswordGenerator {
      */
     public String generate(int length) {
         if (length < 8) {
-            throw new IllegalArgumentException("Passtwort muss mindestes 8 Zeichen lang sein");
+            throw new IllegalArgumentException("Passwort muss mindestes 8 Zeichen lang sein");
         }
 
         StringBuilder password = new StringBuilder(length);

@@ -22,6 +22,7 @@ import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.repository.user.UserRepository;
+import de.laetum.pmbackend.exception.PasswordPolicyException;
 
 /**
  * Service for user management operations. Handles CRUD operations and
@@ -102,10 +103,11 @@ public class UserService {
           String.format(DuplicateResourceException.USERNAME_EXISTS, request.getUsername()));
     }
 
-    // Generate password if not provided
+    // Generate password if not provided, validate if manually set
     String rawPassword;
     boolean wasGenerated;
     if (request.getPassword() != null && !request.getPassword().isBlank()) {
+      validatePassword(request.getPassword());
       rawPassword = request.getPassword();
       wasGenerated = false;
     } else {
@@ -189,6 +191,7 @@ public class UserService {
     user.setActive(request.getActive());
 
     if (request.getPassword() != null && !request.getPassword().isBlank()) {
+      validatePassword(request.getPassword());
       user.setPassword(passwordEncoder.encode(request.getPassword()));
     }
 
@@ -257,5 +260,32 @@ public class UserService {
     }
 
     userRepository.deleteById(id);
+  }
+
+  /**
+   * Validates a manually provided password against the password policy.
+   * Rules: minimum 8 characters, at least one uppercase letter, one lowercase
+   * letter,
+   * one digit, and one special character (!@#$%&*).
+   *
+   * @param password the password to validate
+   * @throws PasswordPolicyException if the password violates any policy rule
+   */
+  private void validatePassword(String password) {
+    if (password.length() < 8) {
+      throw new PasswordPolicyException(PasswordPolicyException.TOO_SHORT);
+    }
+    if (password.chars().noneMatch(Character::isUpperCase)) {
+      throw new PasswordPolicyException(PasswordPolicyException.MISSING_UPPERCASE);
+    }
+    if (password.chars().noneMatch(Character::isLowerCase)) {
+      throw new PasswordPolicyException(PasswordPolicyException.MISSING_LOWERCASE);
+    }
+    if (password.chars().noneMatch(Character::isDigit)) {
+      throw new PasswordPolicyException(PasswordPolicyException.MISSING_DIGIT);
+    }
+    if (password.chars().noneMatch(c -> "!@#$%&*".indexOf(c) >= 0)) {
+      throw new PasswordPolicyException(PasswordPolicyException.MISSING_SPECIAL);
+    }
   }
 }
