@@ -15,6 +15,7 @@ import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.user.UserRepository;
 import de.laetum.pmbackend.repository.user.User;
 import de.laetum.pmbackend.exception.DuplicateResourceException;
+import de.laetum.pmbackend.exception.ForbiddenOperationException;
 import de.laetum.pmbackend.exception.LastAdminDeletionException;
 import de.laetum.pmbackend.exception.PasswordPolicyException;
 import de.laetum.pmbackend.exception.SelfModificationException;
@@ -174,6 +175,107 @@ class UserServiceTest {
     ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
         () -> userService.getUserById(99L));
     assertTrue(exception.getMessage().contains("99"));
+  }
+
+  // ==================== Admin Visibility Restriction ====================
+
+  @Test
+  @DisplayName("getAllUsers as manager excludes admin users")
+  void getAllUsers_AsManager_ExcludesAdmins() {
+    // Arrange
+    User adminUser = new User();
+    adminUser.setId(2L);
+    adminUser.setUsername("adminuser");
+    adminUser.setFirstName("Admin");
+    adminUser.setLastName("User");
+    adminUser.setRole(Role.ADMIN);
+    adminUser.setActive(true);
+
+    User managerUser = new User();
+    managerUser.setId(3L);
+    managerUser.setUsername("manageruser");
+    managerUser.setFirstName("Manager");
+    managerUser.setLastName("User");
+    managerUser.setRole(Role.MANAGER);
+    managerUser.setActive(true);
+
+    when(userRepository.findAll()).thenReturn(Arrays.asList(testUser, adminUser, managerUser));
+    when(userRepository.findByUsername("manageruser")).thenReturn(Optional.of(managerUser));
+    mockAuthenticatedUser("manageruser");
+
+    // Act
+    List<UserDto> result = userService.getAllUsers();
+
+    // Assert
+    assertEquals(2, result.size());
+    assertTrue(result.stream().noneMatch(u -> u.getRole() == Role.ADMIN));
+  }
+
+  @Test
+  @DisplayName("getAllUsers as admin includes all users")
+  void getAllUsers_AsAdmin_IncludesAdmins() {
+    // Arrange
+    User adminUser = new User();
+    adminUser.setId(2L);
+    adminUser.setUsername("adminuser");
+    adminUser.setFirstName("Admin");
+    adminUser.setLastName("User");
+    adminUser.setRole(Role.ADMIN);
+    adminUser.setActive(true);
+
+    when(userRepository.findAll()).thenReturn(Arrays.asList(testUser, adminUser));
+    when(userRepository.findByUsername("currentadmin")).thenReturn(Optional.of(adminUser));
+    mockAuthenticatedUser("currentadmin");
+
+    // Act
+    List<UserDto> result = userService.getAllUsers();
+
+    // Assert
+    assertEquals(2, result.size());
+  }
+
+  @Test
+  @DisplayName("getUserById as manager throws exception for admin user")
+  void getUserById_AsManager_ThrowsForAdminUser() {
+    // Arrange
+    User adminUser = new User();
+    adminUser.setId(2L);
+    adminUser.setUsername("adminuser");
+    adminUser.setRole(Role.ADMIN);
+
+    when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
+
+    // Act & Assert
+    ForbiddenOperationException exception = assertThrows(
+        ForbiddenOperationException.class,
+        () -> userService.getUserById(2L));
+    assertEquals(ForbiddenOperationException.ADMIN_NOT_VISIBLE, exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("getUserById as admin returns admin user")
+  void getUserById_AsAdmin_ReturnsAdminUser() {
+    // Arrange
+    User adminUser = new User();
+    adminUser.setId(2L);
+    adminUser.setUsername("adminuser");
+    adminUser.setRole(Role.ADMIN);
+
+    User currentAdmin = new User();
+    currentAdmin.setId(3L);
+    currentAdmin.setUsername("currentadmin");
+    currentAdmin.setRole(Role.ADMIN);
+
+    when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
+    when(userRepository.findByUsername("currentadmin")).thenReturn(Optional.of(currentAdmin));
+    mockAuthenticatedUser("currentadmin");
+
+    // Act
+    UserDto result = userService.getUserById(2L);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals("adminuser", result.getUsername());
   }
 
   // ==================== createUser ====================

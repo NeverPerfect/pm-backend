@@ -50,26 +50,45 @@ public class UserService {
   }
 
   /**
-   * Get all users.
+   * Get all users. Managers only see non-admin users,
+   * admins see all users.
    *
-   * @return List of all users as DTOs (without passwords)
+   * @return List of users as DTOs (without passwords)
    */
   public List<UserDto> getAllUsers() {
-    return userRepository.findAll().stream().map(userMapper::map).collect(Collectors.toList());
+    User currentUser = getAuthenticatedUser();
+
+    if (currentUser.getRole() == Role.MANAGER) {
+      return userRepository.findAll().stream()
+          .filter(user -> user.getRole() != Role.ADMIN)
+          .map(userMapper::map)
+          .collect(Collectors.toList());
+    }
+
+    return userRepository.findAll().stream()
+        .map(userMapper::map)
+        .collect(Collectors.toList());
   }
 
   /**
-   * Get a single user by ID.
+   * Get a single user by ID. Managers cannot access admin users.
    *
    * @param id User ID
    * @return User as DTO
-   * @throws ResourceNotFoundException if user not found
+   * @throws ResourceNotFoundException   if user not found
+   * @throws ForbiddenOperationException if manager tries to access an admin user
    */
   public UserDto getUserById(Long id) {
     User user = userRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException(
             String.format(ResourceNotFoundException.USER_NOT_FOUND, id)));
+
+    User currentUser = getAuthenticatedUser();
+    if (currentUser.getRole() == Role.MANAGER && user.getRole() == Role.ADMIN) {
+      throw new ForbiddenOperationException(ForbiddenOperationException.ADMIN_NOT_VISIBLE);
+    }
+
     return userMapper.map(user);
   }
 
