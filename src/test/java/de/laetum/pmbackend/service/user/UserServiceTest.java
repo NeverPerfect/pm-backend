@@ -8,6 +8,7 @@ import de.laetum.pmbackend.controller.user.CreateUserRequest;
 import de.laetum.pmbackend.controller.user.UpdateUserRequest;
 import de.laetum.pmbackend.controller.user.UserDto;
 import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+import de.laetum.pmbackend.repository.team.Team;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.service.user.UserService;
@@ -39,7 +40,6 @@ import de.laetum.pmbackend.service.user.UserMapper;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import de.laetum.pmbackend.exception.UserInUseException;
-import de.laetum.pmbackend.exception.DuplicateResourceException;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -858,6 +858,66 @@ class UserServiceTest {
     assertEquals(UserInUseException.IN_TEAMS, exception.getMessage());
     // Schedule check should not be reached when team check already fails
     verify(scheduleRepository, never()).existsByUserId(any());
+  }
+
+  // ==================== Force Delete ====================
+
+  @Test
+  @DisplayName("deleteUserForced removes user from teams and deletes")
+  void deleteUserForced_WhenUserInTeams_RemovesAndDeletes() {
+    // Arrange
+    Team team1 = new Team("Team A", "Desc A");
+    team1.setId(10L);
+    team1.addUser(testUser);
+
+    Team team2 = new Team("Team B", "Desc B");
+    team2.setId(11L);
+    team2.addUser(testUser);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findAllByUsersId(1L)).thenReturn(Arrays.asList(team1, team2));
+    when(scheduleRepository.existsByUserId(1L)).thenReturn(false);
+
+    // Act
+    userService.deleteUserForced(1L);
+
+    // Assert
+    assertFalse(team1.getUsers().contains(testUser));
+    assertFalse(team2.getUsers().contains(testUser));
+    verify(teamRepository).save(team1);
+    verify(teamRepository).save(team2);
+    verify(userRepository).deleteById(1L);
+  }
+
+  @Test
+  @DisplayName("deleteUserForced still blocks when user has schedules")
+  void deleteUserForced_WhenUserHasSchedules_ThrowsException() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findAllByUsersId(1L)).thenReturn(Arrays.asList());
+    when(scheduleRepository.existsByUserId(1L)).thenReturn(true);
+
+    // Act & Assert
+    UserInUseException exception = assertThrows(
+        UserInUseException.class,
+        () -> userService.deleteUserForced(1L));
+    assertEquals(UserInUseException.HAS_SCHEDULES, exception.getMessage());
+    verify(userRepository, never()).deleteById(any());
+  }
+
+  @Test
+  @DisplayName("deleteUserForced prevents self-deletion")
+  void deleteUserForced_WhenSelfDelete_ThrowsException() {
+    // Arrange
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+    mockAuthenticatedUser("testuser");
+
+    // Act & Assert
+    SelfModificationException exception = assertThrows(
+        SelfModificationException.class,
+        () -> userService.deleteUserForced(1L));
+    assertEquals(SelfModificationException.SELF_DELETE, exception.getMessage());
   }
 
 }

@@ -18,6 +18,7 @@ import de.laetum.pmbackend.exception.SelfModificationException;
 import de.laetum.pmbackend.exception.UserInUseException;
 import de.laetum.pmbackend.exception.ResourceNotFoundException;
 import de.laetum.pmbackend.repository.schedule.ScheduleRepository;
+import de.laetum.pmbackend.repository.team.Team;
 import de.laetum.pmbackend.repository.team.TeamRepository;
 import de.laetum.pmbackend.repository.user.Role;
 import de.laetum.pmbackend.repository.user.User;
@@ -274,6 +275,51 @@ public class UserService {
     }
 
     // Prevent deletion of users with schedule entries
+    if (scheduleRepository.existsByUserId(id)) {
+      throw new UserInUseException(UserInUseException.HAS_SCHEDULES);
+    }
+
+    userRepository.deleteById(id);
+  }
+
+  /**
+   * Force-delete a user by removing them from all teams first, then deleting.
+   * Schedule entries still block deletion — work data must not be silently
+   * removed.
+   *
+   * @param id User ID
+   * @throws ResourceNotFoundException  if user does not exist
+   * @throws SelfModificationException  if user attempts to delete themselves
+   * @throws LastAdminDeletionException if this would delete the last active admin
+   * @throws UserInUseException         if user still has schedule entries
+   */
+  public void deleteUserForced(Long id) {
+    User userToDelete = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            String.format(ResourceNotFoundException.USER_NOT_FOUND, id)));
+
+    // Prevent self-deletion
+    User currentUser = getAuthenticatedUser();
+    if (currentUser.getId().equals(id)) {
+      throw new SelfModificationException(SelfModificationException.SELF_DELETE);
+    }
+
+    // Prevent deletion of the last active admin
+    if (userToDelete.getRole() == Role.ADMIN && userToDelete.isActive()) {
+      long activeAdminCount = userRepository.countByRoleAndActiveTrue(Role.ADMIN);
+      if (activeAdminCount <= 1) {
+        throw new LastAdminDeletionException();
+      }
+    }
+
+    // Remove user from all teams
+    List<Team> teams = teamRepository.findAllByUsersId(id);
+    for (Team team : teams) {
+      team.removeUser(userToDelete);
+      teamRepository.save(team);
+    }
+
+    // Schedule entries still block deletion
     if (scheduleRepository.existsByUserId(id)) {
       throw new UserInUseException(UserInUseException.HAS_SCHEDULES);
     }

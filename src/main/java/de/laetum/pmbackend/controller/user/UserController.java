@@ -93,18 +93,22 @@ public class UserController {
     return ResponseEntity.ok(userService.resetPassword(id));
   }
 
-  @Operation(summary = "Benutzer löschen", description = "Löscht einen Benutzer (nur ADMIN)")
+  @Operation(summary = "Benutzer löschen", description = "Löscht einen Benutzer (nur ADMIN). Mit force=true wird der Benutzer zuerst aus allen Teams entfernt.")
   @ApiResponses({
       @ApiResponse(responseCode = "204", description = "Benutzer gelöscht"),
       @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
       @ApiResponse(responseCode = "403", description = "Keine Berechtigung oder Selbstlöschung"),
       @ApiResponse(responseCode = "409", description = "Benutzer wird noch referenziert oder letzter Admin")
   })
-
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteUser(
-      @Parameter(description = "ID des Benutzers") @PathVariable Long id) {
-    userService.deleteUser(id);
+      @Parameter(description = "ID des Benutzers") @PathVariable Long id,
+      @Parameter(description = "Wenn true, wird der Benutzer zuerst aus allen Teams entfernt") @RequestParam(defaultValue = "false") boolean force) {
+    if (force) {
+      userService.deleteUserForced(id);
+    } else {
+      userService.deleteUser(id);
+    }
     return ResponseEntity.noContent().build();
   }
 
