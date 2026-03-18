@@ -189,6 +189,12 @@ public class UserService {
           SelfModificationException.ADMIN_SELF_DEACTIVATE);
     }
 
+    // Prevent users from changing their own username
+    if (currentUser.getId().equals(id)
+        && !currentUser.getUsername().equals(request.getUsername())) {
+      throw new SelfModificationException(SelfModificationException.SELF_RENAME);
+    }
+
     // Only admins can modify other admin users
     if (user.getRole() == Role.ADMIN && currentUser.getRole() != Role.ADMIN) {
       throw new ForbiddenOperationException(

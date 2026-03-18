@@ -70,7 +70,7 @@ public class UserController {
       @ApiResponse(responseCode = "200", description = "Benutzer aktualisiert"),
       @ApiResponse(responseCode = "404", description = "Benutzer nicht gefunden"),
       @ApiResponse(responseCode = "400", description = "Ungültige Anfrage"),
-      @ApiResponse(responseCode = "403", description = "Keine Berechtigung"),
+      @ApiResponse(responseCode = "403", description = "Keine Berechtigung oder verbotene Selbständerung"),
       @ApiResponse(responseCode = "409", description = "Benutzername existiert bereits")
   })
 

@@ -8,6 +8,7 @@ public class SelfModificationException extends RuntimeException {
     public static final String SELF_DELETE = "Users cannot delete their own account";
     public static final String ADMIN_SELF_DEMOTE = "Admins cannot remove their own admin role";
     public static final String ADMIN_SELF_DEACTIVATE = "Admins cannot deactivate their own account";
+    public static final String SELF_RENAME = "Der eigene Benutzername kann nicht geändert werden.";
 
     public SelfModificationException(String message) {
         super(message);
