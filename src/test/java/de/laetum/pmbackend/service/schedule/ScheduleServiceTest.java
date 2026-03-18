@@ -115,6 +115,10 @@ class ScheduleServiceTest {
       dto.setCategoryColor(s.getCategory().getColor());
       return dto;
     });
+
+    // Default: no existing schedules for overlap check
+    when(scheduleRepository.findByUserIdAndDate(any(), any()))
+        .thenReturn(Arrays.asList());
   }
 
   // ==================== getSchedulesByUserId ====================
@@ -555,5 +559,136 @@ class ScheduleServiceTest {
         ScheduleValidationException.class,
         () -> scheduleService.updateSchedule(1L, 1L, request));
     assertEquals(ScheduleValidationException.DATE_IN_FUTURE, exception.getMessage());
+  }
+
+  // ==================== Time Overlap Protection ====================
+
+  @Test
+  @DisplayName("createSchedule throws exception when time overlaps with existing booking")
+  void createSchedule_WhenTimeOverlaps_ThrowsException() {
+    // Arrange — existing booking 09:00-17:00, new booking 10:00-12:00 (inside)
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 20)); // Same date as testSchedule
+    request.setStartTime(LocalTime.of(10, 0));
+    request.setEndTime(LocalTime.of(12, 0));
+    request.setDescription("Overlapping");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(scheduleRepository.findByUserIdAndDate(1L, LocalDate.of(2026, 1, 20)))
+        .thenReturn(Arrays.asList(testSchedule));
+
+    // Act & Assert
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
+        () -> scheduleService.createSchedule(1L, request));
+    assertEquals(ScheduleValidationException.TIME_OVERLAP, exception.getMessage());
+    verify(scheduleRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("createSchedule allows adjacent bookings without overlap")
+  void createSchedule_WhenTimesAdjacent_Succeeds() {
+    // Arrange — existing 09:00-12:00, new 12:00-15:00 (adjacent, no overlap)
+    Schedule existingSchedule = new Schedule();
+    existingSchedule.setId(10L);
+    existingSchedule.setStartTime(LocalTime.of(9, 0));
+    existingSchedule.setEndTime(LocalTime.of(12, 0));
+
+    CreateScheduleRequest request = new CreateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 21));
+    request.setStartTime(LocalTime.of(12, 0));
+    request.setEndTime(LocalTime.of(15, 0));
+    request.setDescription("Adjacent booking");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(scheduleRepository.findByUserIdAndDate(1L, LocalDate.of(2026, 1, 21)))
+        .thenReturn(Arrays.asList(existingSchedule));
+    when(scheduleRepository.save(any(Schedule.class))).thenAnswer(inv -> {
+      Schedule saved = inv.getArgument(0);
+      saved.setId(2L);
+      return saved;
+    });
+
+    // Act
+    ScheduleDto result = scheduleService.createSchedule(1L, request);
+
+    // Assert
+    assertNotNull(result);
+    verify(scheduleRepository).save(any(Schedule.class));
+  }
+
+  @Test
+  @DisplayName("updateSchedule excludes own schedule from overlap check")
+  void updateSchedule_WhenEditingSameSchedule_Succeeds() {
+    // Arrange — editing testSchedule (09:00-17:00) to (09:00-16:00), same ID
+    UpdateScheduleRequest request = new UpdateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 20)); // Same date
+    request.setStartTime(LocalTime.of(9, 0));
+    request.setEndTime(LocalTime.of(16, 0)); // Shortened
+    request.setDescription("Updated");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+
+    when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(scheduleRepository.findByUserIdAndDate(1L, LocalDate.of(2026, 1, 20)))
+        .thenReturn(Arrays.asList(testSchedule)); // Returns itself
+    when(scheduleRepository.save(any(Schedule.class))).thenReturn(testSchedule);
+
+    // Act
+    ScheduleDto result = scheduleService.updateSchedule(1L, 1L, request);
+
+    // Assert
+    assertNotNull(result);
+    verify(scheduleRepository).save(any(Schedule.class));
+  }
+
+  @Test
+  @DisplayName("updateSchedule throws exception when new time overlaps with another booking")
+  void updateSchedule_WhenTimeOverlapsWithOther_ThrowsException() {
+    // Arrange — testSchedule is 09:00-17:00, another booking 08:00-10:00 exists
+    Schedule otherSchedule = new Schedule();
+    otherSchedule.setId(20L);
+    otherSchedule.setStartTime(LocalTime.of(8, 0));
+    otherSchedule.setEndTime(LocalTime.of(10, 0));
+
+    // Update testSchedule to 07:00-09:30 — overlaps with otherSchedule
+    UpdateScheduleRequest request = new UpdateScheduleRequest();
+    request.setDate(LocalDate.of(2026, 1, 20));
+    request.setStartTime(LocalTime.of(7, 0));
+    request.setEndTime(LocalTime.of(9, 30));
+    request.setDescription("Overlap update");
+    request.setTeamId(1L);
+    request.setProjectId(1L);
+    request.setCategoryId(1L);
+
+    when(scheduleRepository.findById(1L)).thenReturn(Optional.of(testSchedule));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+    when(scheduleRepository.findByUserIdAndDate(1L, LocalDate.of(2026, 1, 20)))
+        .thenReturn(Arrays.asList(testSchedule, otherSchedule));
+
+    // Act & Assert
+    ScheduleValidationException exception = assertThrows(
+        ScheduleValidationException.class,
+        () -> scheduleService.updateSchedule(1L, 1L, request));
+    assertEquals(ScheduleValidationException.TIME_OVERLAP, exception.getMessage());
+    verify(scheduleRepository, never()).save(any());
   }
 }

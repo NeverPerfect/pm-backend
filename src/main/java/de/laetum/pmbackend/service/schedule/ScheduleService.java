@@ -90,7 +90,8 @@ public class ScheduleService {
   /**
    * Create a new schedule entry. Validates that the user is active, belongs to
    * the team, the project is active, the team is assigned to the project,
-   * and the category exists.
+   * the category exists, and the time range does not overlap with existing
+   * bookings.
    *
    * @param userId  User ID
    * @param request Schedule data
@@ -148,6 +149,8 @@ public class ScheduleService {
 
     double hours = calculateHours(request.getStartTime(), request.getEndTime());
 
+    checkForOverlap(userId, request.getDate(), request.getStartTime(), request.getEndTime(), null);
+
     Schedule schedule = new Schedule();
     schedule.setDate(request.getDate());
     schedule.setStartTime(request.getStartTime());
@@ -165,7 +168,8 @@ public class ScheduleService {
 
   /**
    * Update an existing schedule entry. Validates ownership and the same
-   * constraints as creation.
+   * constraints as creation, including overlap detection (excluding the
+   * schedule being updated).
    *
    * @param id      Schedule ID
    * @param userId  User ID (must match schedule owner)
@@ -230,6 +234,8 @@ public class ScheduleService {
 
     double hours = calculateHours(request.getStartTime(), request.getEndTime());
 
+    checkForOverlap(userId, request.getDate(), request.getStartTime(), request.getEndTime(), id);
+
     schedule.setDate(request.getDate());
     schedule.setStartTime(request.getStartTime());
     schedule.setEndTime(request.getEndTime());
@@ -241,6 +247,35 @@ public class ScheduleService {
 
     Schedule saved = scheduleRepository.save(schedule);
     return scheduleMapper.map(saved);
+  }
+
+  /**
+   * Checks if the given time range overlaps with any existing schedule
+   * for the same user on the same date. Excludes the schedule with the
+   * given ID (for update operations).
+   *
+   * @param userId    the user's ID
+   * @param date      the booking date
+   * @param startTime the start time to check
+   * @param endTime   the end time to check
+   * @param excludeId schedule ID to exclude (null for create)
+   * @throws ScheduleValidationException if an overlap is detected
+   */
+  private void checkForOverlap(Long userId, LocalDate date, LocalTime startTime,
+      LocalTime endTime, Long excludeId) {
+    List<Schedule> existing = scheduleRepository.findByUserIdAndDate(userId, date);
+
+    for (Schedule s : existing) {
+      // Skip the schedule being updated
+      if (excludeId != null && s.getId().equals(excludeId)) {
+        continue;
+      }
+
+      // Overlap: A.start < B.end AND B.start < A.end
+      if (startTime.isBefore(s.getEndTime()) && s.getStartTime().isBefore(endTime)) {
+        throw new ScheduleValidationException(ScheduleValidationException.TIME_OVERLAP);
+      }
+    }
   }
 
   /**

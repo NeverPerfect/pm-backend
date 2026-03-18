@@ -3,6 +3,8 @@ package de.laetum.pmbackend.repository.schedule;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
@@ -10,6 +12,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
   List<Schedule> findByUserId(Long userId);
 
   List<Schedule> findByUserIdOrderByDateDesc(Long userId);
+
+  List<Schedule> findByUserIdAndDate(Long userId, LocalDate date);
 
   boolean existsByUserId(Long userId);
 

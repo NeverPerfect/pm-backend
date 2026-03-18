@@ -15,6 +15,7 @@ public class ScheduleValidationException extends RuntimeException {
     public static final String START_EQUALS_END = "Startzeit und Endzeit dürfen nicht identisch sein.";
     public static final String DURATION_EXCEEDS_24H = "Die berechnete Dauer darf 24 Stunden nicht überschreiten.";
     public static final String DATE_IN_FUTURE = "Das Buchungsdatum darf nicht in der Zukunft liegen.";
+    public static final String TIME_OVERLAP = "Der Zeitraum überschneidet sich mit einer bestehenden Buchung.";
 
     public ScheduleValidationException(String message) {
         super(message);
