@@ -337,7 +337,7 @@ public class UserService {
    * Validates a manually provided password against the password policy.
    * Rules: minimum 8 characters, at least one uppercase letter, one lowercase
    * letter,
-   * one digit, and one special character (!@#$%&*).
+   * one digit, and one special character (any non-alphanumeric character)
    *
    * @param password the password to validate
    * @throws PasswordPolicyException if the password violates any policy rule
@@ -355,7 +355,7 @@ public class UserService {
     if (password.chars().noneMatch(Character::isDigit)) {
       throw new PasswordPolicyException(PasswordPolicyException.MISSING_DIGIT);
     }
-    if (password.chars().noneMatch(c -> "!@#$%&*".indexOf(c) >= 0)) {
+    if (password.chars().noneMatch(c -> !Character.isLetterOrDigit(c))) {
       throw new PasswordPolicyException(PasswordPolicyException.MISSING_SPECIAL);
     }
   }

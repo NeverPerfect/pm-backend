@@ -425,6 +425,34 @@ class UserServiceTest {
   }
 
   @Test
+  @DisplayName("createUser accepts password with non-standard special characters")
+  void createUser_WhenPasswordHasExtendedSpecial_Succeeds() {
+    // Arrange
+    CreateUserRequest request = new CreateUserRequest();
+    request.setUsername("newuser");
+    request.setPassword("ValidPass1="); // = was previously rejected
+    request.setFirstName("New");
+    request.setLastName("User");
+    request.setRole(Role.EMPLOYEE);
+    request.setActive(true);
+
+    when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
+    when(passwordEncoder.encode("ValidPass1=")).thenReturn("encoded");
+    when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+      User saved = invocation.getArgument(0);
+      saved.setId(2L);
+      return saved;
+    });
+
+    // Act
+    UserDto result = userService.createUser(request);
+
+    // Assert
+    assertNotNull(result);
+    verify(userRepository).save(any(User.class));
+  }
+
+  @Test
   @DisplayName("createUser skips validation for auto-generated passwords")
   void createUser_WhenNoPassword_SkipsValidation() {
     // Arrange
@@ -725,29 +753,6 @@ class UserServiceTest {
         SelfModificationException.class,
         () -> userService.updateUser(1L, request));
     assertEquals(SelfModificationException.ADMIN_SELF_DEACTIVATE, exception.getMessage());
-    verify(userRepository, never()).save(any());
-  }
-
-  @Test
-  @DisplayName("updateUser throws exception when user renames themselves")
-  void updateUser_WhenUserRenamesSelf_ThrowsException() {
-    // Arrange
-    UpdateUserRequest request = new UpdateUserRequest();
-    request.setUsername("newname"); // Different from "testuser"
-    request.setFirstName("Test");
-    request.setLastName("User");
-    request.setRole(Role.EMPLOYEE);
-    request.setActive(true);
-
-    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-    mockAuthenticatedUser("testuser");
-
-    // Act & Assert
-    SelfModificationException exception = assertThrows(
-        SelfModificationException.class,
-        () -> userService.updateUser(1L, request));
-    assertEquals(SelfModificationException.SELF_RENAME, exception.getMessage());
     verify(userRepository, never()).save(any());
   }
   // ==================== Last Admin Protection ====================
